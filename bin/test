@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+bash_files=(bin/bootstrap bin/bootstrap-base bin/test)
+
+for bash_file in "${bash_files[@]}"; do
+    shellcheck "${bash_file}"
+done

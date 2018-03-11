@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+
+dotfiles_link=${1}
+dotfiles_directory="${HOME}/.dotfiles"
+xcode_installation_marker_file="${dotfiles_directory}/.xcode_accepted"
+
+
+##
+# Pretty output functions
+##
+
+
+function info () {
+	printf "\\t  [\\033[00;34mINFO\\033[0m] %s\\n" "${1}"
+}
+
+function user () {
+	printf "\\t  [ \\033[0;33m??\\033[0m ] %s\\n" "${1}"
+}
+
+function success () {
+	printf "\\t\\033[2K  [ \\033[00;32mOK\\033[0m ] %s\\n" "${1}"
+}
+
+function warn () {
+	printf "\\t\\033[2K  [\\033[38:2:255:165:0mWARN\\033[0m] %s\\n" "${1}"
+}
+
+function fail () {
+	printf "\\t\\033[2K  [\\033[0;31mFAIL\\033[0m] %s\\n" "${1}"
+	exit 1
+}
+
+
+##
+# Initialization functions
+##
+function main() {
+    download_dotfiles
+    initialize_package_manager
+
+    install_pydotfiles
+    dotfiles install all
+}
+
+function download_dotfiles() {
+    if [[ -d ${dotfiles_directory} ]]; then
+        success "Dotfiles Download: The dotfiles have already been downloaded to ${dotfiles_directory}"
+    else
+        info "Dotfiles Download: The dotfiles have not been downloaded yet, downloading now"
+        if git clone "${dotfiles_link}" "${dotfiles_directory}" &> /dev/null ; then
+            success "Dotfiles Download: Successfully downloaded the dotfiles to ${dotfiles_directory}"
+        else
+            fail "Dotfiles Download: Failed to download the dotfiles to ${dotfiles_directory}, please check your internet connection"
+        fi
+    fi
+}
+
+function initialize_package_manager() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # Installs Xcode if we need it
+        if [[ -f ${xcode_installation_marker_file} ]]; then
+            success "Package Manager Initialization: Xcode is already installed"
+        else
+            if install_xcode ; then
+                success "Package Manager Initialization: Successfully installed Xcode"
+                true > "${xcode_installation_marker_file}"
+            else
+                fail "Package Manager Initialization: Failed to install Xcode"
+            fi
+        fi
+
+        # Installs Homebrew if we need it
+        if [[ $(which brew) == "" ]]; then
+            info "Package Manager Initialization: Homebrew wasn't found, installing now"
+            if printf "\\r" | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
+                success "Package Manager Initialization: Successfully installed Homebrew"
+            else
+                fail "Package Manager Initialization: Failed to install Homebrew"
+            fi
+        else
+            success "Package Manager Initialization: Already installed Homebrew"
+        fi
+    fi
+}
+
+function install_xcode() {
+    # Code from https://apple.stackexchange.com/questions/107307/how-can-i-install-the-command-line-tools-completely-from-the-command-line/195963#195963
+    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
+    PROD=$(softwareupdate -l |
+      grep "\\*.*Command Line" |
+      head -n 1 | awk -F"*" '{print $2}' |
+      sed -e 's/^ *//' |
+      tr -d '\n')
+    softwareupdate -i "${PROD}" --verbose;
+}
+
+function install_pydotfiles() {
+    if pip install pydotfiles ; then
+        success "PyDotfiles: Successfully installed the PyDotfiles package"
+    else
+        fail "PyDotfiles: Failed to install the PyDotfiles package"
+    fi
+}
+
+
+main "${@}"

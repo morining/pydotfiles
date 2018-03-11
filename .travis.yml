@@ -1,0 +1,23 @@
+# General build settings
+sudo: false
+dist: trusty
+
+
+# Notification settings
+# TODO look into fixing this
+notifications:
+  email:
+    recipients:
+      - hello@jasonyao.com
+    # Only sends an email when the build status changes
+    on_success: change
+
+
+script:
+  # Runs through the test suite
+  - bin/test
+
+## We only run the tests and deployment checks if the build succeeded
+#after_success:
+#  # Deployment steps (on success & on the correct branch)
+#  - bin/deploy

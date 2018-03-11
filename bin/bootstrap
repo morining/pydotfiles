@@ -1,0 +1,235 @@
+#!/usr/bin/env bash
+
+
+dotfiles_link=${1}
+dotfiles_directory="${HOME}/.dotfiles"
+dotfiles_link_marker_file="${dotfiles_directory}/.dotfile_link"
+xcode_installation_marker_file="${dotfiles_directory}/.xcode_accepted"
+python_version="3.6.4"
+if [[ "$(uname -s)" == "Darwin" ]] ; then bash_config_file="${HOME}/.bash_profile"; else bash_config_file="${HOME}/.bashrc"; fi
+
+##
+# Pretty output functions
+##
+
+
+function info () {
+	printf "\\t  [\\033[00;34mINFO\\033[0m] %s\\n" "${1}"
+}
+
+function user () {
+	printf "\\t  [ \\033[0;33m??\\033[0m ] %s\\n" "${1}"
+}
+
+function success () {
+	printf "\\t\\033[2K  [ \\033[00;32mOK\\033[0m ] %s\\n" "${1}"
+}
+
+function warn () {
+	printf "\\t\\033[2K  [\\033[38:2:255:165:0mWARN\\033[0m] %s\\n" "${1}"
+}
+
+function fail () {
+	printf "\\t\\033[2K  [\\033[0;31mFAIL\\033[0m] %s\\n" "${1}"
+	exit 1
+}
+
+
+##
+# Initialization functions
+##
+function main() {
+    initialize_command_line_tools
+    download_dotfiles
+    initialize_package_manager
+    setup_opinionated_python_environment
+
+    install_pydotfiles
+    dotfiles install all
+}
+
+function initialize_command_line_tools() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # Installs Xcode if we need it
+        if [[ -f ${xcode_installation_marker_file} ]]; then
+            success "Package Manager Initialization: Xcode is already installed"
+        else
+            if install_xcode ; then
+                success "Package Manager Initialization: Successfully installed Xcode"
+                true > "${xcode_installation_marker_file}"
+            else
+                fail "Package Manager Initialization: Failed to install Xcode"
+            fi
+        fi
+    fi
+}
+
+function download_dotfiles() {
+    if [[ -d ${dotfiles_directory} ]]; then
+        success "Dotfiles Download: The dotfiles have already been downloaded to ${dotfiles_directory}"
+    else
+        info "Dotfiles Download: The dotfiles have not been downloaded yet, downloading now"
+        if git clone "${dotfiles_link}" "${dotfiles_directory}" &> /dev/null ; then
+            echo "${dotfiles_link}" > "${dotfiles_link_marker_file}"
+            success "Dotfiles Download: Successfully downloaded the dotfiles to ${dotfiles_directory}"
+        else
+            fail "Dotfiles Download: Failed to download the dotfiles to ${dotfiles_directory}, please check your internet connection"
+        fi
+    fi
+}
+
+function initialize_package_manager() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # Installs Homebrew if we need it
+        if [[ $(which brew) == "" ]]; then
+            info "Package Manager Initialization: Homebrew wasn't found, installing now"
+            if printf "\\r" | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
+                success "Package Manager Initialization: Successfully installed Homebrew"
+            else
+                fail "Package Manager Initialization: Failed to install Homebrew"
+            fi
+        else
+            success "Package Manager Initialization: Already installed Homebrew"
+        fi
+    fi
+}
+
+function install_xcode() {
+    # Code from https://apple.stackexchange.com/questions/107307/how-can-i-install-the-command-line-tools-completely-from-the-command-line/195963#195963
+    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
+    PROD=$(softwareupdate -l |
+      grep "\\*.*Command Line" |
+      tail -n 1 | awk -F"*" '{print $2}' |
+      sed -e 's/^ *//' |
+      tr -d '\n')
+    softwareupdate -i "${PROD}" --verbose;
+}
+
+function setup_opinionated_python_environment() {
+    install_pyenv
+    install_pyenv_virtualenv
+    setup_base_virtualenv
+}
+
+function install_pyenv() {
+    if [[ $(which pyenv) == "" ]]; then
+		info "Pyenv: Pyenv wasn't found, installing now"
+
+		if [[ "$(uname -s)" == "Darwin" ]]; then
+            if brew install pyenv ; then
+                success "Pyenv: Successfully installed Homebrew"
+            else
+                fail "Pyenv: Failed to install Pyenv"
+            fi
+		else
+            if install_pyenv_non_mac ; then
+                success "Pyenv: Successfully installed Homebrew"
+            else
+                fail "Pyenv: Failed to install Pyenv"
+            fi
+		fi
+
+		# Enables auto-completion
+        echo -e "if command -v pyenv 1>/dev/null 2>&1; then\\n  eval \"$(pyenv init -)\"\\nfi" >> "${bash_config_file}"
+
+		# Restarts the shell to get access to it immediately
+		exec "${SHELL}"
+	else
+		success "Pyenv: Already installed Pyenv"
+	fi
+}
+
+function install_pyenv_non_mac() {
+    git clone https://github.com/pyenv/pyenv.git "${HOME}/.pyenv"
+    {
+        echo "export PYENV_ROOT=\"${HOME}/.pyenv\""
+        echo "export PATH=\"${PYENV_ROOT}/bin:$PATH\""
+    } >> "${bash_config_file}"
+}
+
+function install_pyenv_virtualenv() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        if brew install pyenv-virtualenv ; then
+            success "Pyenv Virtualenv: Successfully installed pyenv virtualenv"
+        else
+            fail "Pyenv Virtualenv: Failed to install pyenv virtualenv"
+        fi
+    else
+        if git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv" &> /dev/null ; then
+            success "Pyenv Virtualenv: Successfully installed pyenv virtualenv"
+        else
+            fail "Pyenv Virtualenv: Failed to install pyenv virtualenv"
+        fi
+    fi
+
+    echo "eval \"$(pyenv virtualenv-init -)\"" >> "${bash_config_file}"
+
+    # Restarts the shell to get access to it immediately
+	exec "${SHELL}"
+}
+
+function setup_base_virtualenv() {
+    # Installs a useful python environment
+	install_python_version "${python_version}"
+
+	virtual_env_name="laptop-${python_version}"
+
+	if pyenv virtualenv "${python_version}" ${virtual_env_name} ; then
+	    success "Opinionated Environment: Successfully setup the isolated python environment '${virtual_env_name}'"
+	else
+	    fail "Opinionated Environment: Failed to setup the isolated python environment '${virtual_env_name}'"
+	fi
+
+	if pyenv global laptop-"${python_version}" ; then
+	    success "Opinionated Environment: Successfully set the isolated python environment '${virtual_env_name}' to be $(whoami)'s default"
+	else
+	    fail "Opinionated Environment: Failed to set the isolated python environment '${virtual_env_name}' to be $(whoami)'s default"
+	fi
+}
+
+function install_python_version() {
+    version=${1}
+
+    if [[ $(pyenv versions | grep "${version}") == "" ]]; then
+		info "Pyenv: Python version ${version} is not installed yet, installing now"
+
+		# Checks if pyenv has the correct version first
+		info "Pyenv: Checking for python version ${version}"
+		if [[ $(pyenv install --list | grep "${version}") == "" ]]; then
+			fail "Pyenv: Python version ${version} was not found, please check it is valid and pyenv is up to date"
+		else
+			success "Pyenv: Python version ${version} was found"
+		fi
+
+		# Runs through normal install if possible, using CFlag if not
+		info "Pyenv: Attempting normal install"
+		if pyenv install "${version}" &> /dev/null ; then
+			success "Pyenv: Python version ${version} is now installed"
+		else
+			warn "Pyenv: Python version ${version} failed to install, attempting to run with CFlags"
+			if CFLAGS="-I$(xcrun --show-sdk-path)/usr/include" pyenv install "${version}" &> /dev/null ; then
+				success "Pyenv: Python version ${version} is now installed"
+			else
+				warn "Pyenv: CFlag setting when installing ${version} failed, attempting to install with CFlags and LDFlags"
+				if CFLAGS="-I$(brew --prefix openssl)/include" LDFLAGS="-L$(brew --prefix openssl)/lib" pyenv install "${version}" &> /dev/null ; then
+					success "Pyenv: Python version ${version} is now installed"
+				else
+					fail "Pyenv: Python version ${version} failed to install"
+				fi
+			fi
+		fi
+	else
+		success "Pyenv: Python version ${version} is already installed"
+	fi
+}
+
+function install_pydotfiles() {
+    if pip install pydotfiles ; then
+        success "PyDotfiles: Successfully installed the PyDotfiles package"
+    else
+        fail "PyDotfiles: Failed to install the PyDotfiles package"
+    fi
+}
+
+
+main "${@}"
