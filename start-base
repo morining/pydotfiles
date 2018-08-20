@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+##
+# Unopinionated entry script for the pydotfiles module
+# that will just install pydotfiles
+##
+
+configuration_repo_git_link=$1
+pydotfiles_config_directory="$HOME/.pydotfiles_config"
+pydotfiles_directory="$HOME/.pydotfiles"
+
+# Pretty output functions
+function info () {
+	printf "\\t  [\\033[00;34mINFO\\033[0m] %s\\n" "${1}"
+}
+
+function user () {
+	printf "\\t  [ \\033[0;33m??\\033[0m ] %s\\n" "${1}"
+}
+
+function success () {
+	printf "\\t\\033[2K  [ \\033[00;32mOK\\033[0m ] %s\\n" "${1}"
+}
+
+function warn () {
+	printf "\\t\\033[2K  [\\033[38:2:255:165:0mWARN\\033[0m] %s\\n" "${1}"
+}
+
+function fail () {
+	printf "\\t\\033[2K  [\\033[0;31mFAIL\\033[0m] %s\\n" "${1}"
+	exit 1
+}
+
+function start() {
+    dotfiles_setup "${configuration_repo_git_link}"
+}
+
+# Dotfiles functions
+
+function dotfiles_setup() {
+    configuration_repo_git_link=$1
+
+    dotfiles_setup_config_directory
+    dotfiles_clone_configuration_repo "$configuration_repo_git_link"
+    dotfiles_install_pydotfiles
+    dotfiles_setup_pydotfiles
+}
+
+function dotfiles_setup_config_directory() {
+    if [[ -d "$pydotfiles_config_directory" ]]; then
+        success "Dotfiles: The pydotfiles config directory is already created"
+    else
+        info "Dotfiles: Missing pydotfiles config directory, creating now"
+        if mkdir -p "$pydotfiles_config_directory" ; then
+            success "Dotfiles: Successfully created the pydotfiles config directory"
+        else
+            fail "Dotfiles: Failed to create the pydotfiles config directory"
+        fi
+    fi
+}
+
+function dotfiles_clone_configuration_repo() {
+    configuration_repo_git_link=$1
+
+    if [[ -d "$pydotfiles_config_directory/.git" ]]; then
+        success "Dotfiles: Already cloned a git repository to the pydotfiles directory"
+    else
+        info "Dotfiles: Missing pydotfiles configuration repo, cloning now"
+
+        if git clone "$configuration_repo_git_link" "$pydotfiles_config_directory" &> /dev/null ; then
+            success "Dotfiles: Successfully cloned pydotfiles configuration repo"
+        else
+            fail "Dotfiles: Failed to clone the pydotfiles configuration repo"
+        fi
+    fi
+}
+
+function dotfiles_install_pydotfiles() {
+    if [[ $(pip freeze | grep "pydotfiles") == "" ]]; then
+        info "Pydotfiles: The pydotfiles pip package was not installed yet, installing now"
+        if pip install pydotfiles ; then
+            success "Pydotfiles: Successfully installed pydotfiles"
+        else
+            fail "Pydotfiles: Failed to install pydotfiles"
+        fi
+    else
+        success "Pydotfiles: Already installed pydotfiles"
+    fi
+}
+
+function dotfiles_setup_pydotfiles() {
+    if [[ -f "$pydotfiles_directory/.activated" ]]; then
+        success "Pydotfiles: The pydotfiles configurations are already activated"
+    else
+        info "Pydotfiles: The pydotfiles configurations have not been activated yet, activating now"
+        if pydotfiles install ; then
+            success "Pydotfiles: Successfully activated the pydotfiles configurations"
+        else
+            fail "Pydotfiles: Failed to activate the pydotfiles configurations"
+        fi
+    fi
+}
+
+start

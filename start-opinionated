@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+
+##
+# Opinionated entry script for the pydotfiles module
+# that will setup pyenv first before installing pydotfiles
+##
+
+python_base_versions=(3.7.0 2.7.15)
+primary_python_version="3.7.0"
+configuration_repo_git_link=$1
+pydotfiles_config_directory="$HOME/.pydotfiles_config"
+pydotfiles_directory="$HOME/.pydotfiles"
+
+
+# Pretty output functions
+
+function info () {
+	printf "\\t  [\\033[00;34mINFO\\033[0m] %s\\n" "${1}"
+}
+
+function user () {
+	printf "\\t  [ \\033[0;33m??\\033[0m ] %s\\n" "${1}"
+}
+
+function success () {
+	printf "\\t\\033[2K  [ \\033[00;32mOK\\033[0m ] %s\\n" "${1}"
+}
+
+function warn () {
+	printf "\\t\\033[2K  [\\033[38:2:255:165:0mWARN\\033[0m] %s\\n" "${1}"
+}
+
+function fail () {
+	printf "\\t\\033[2K  [\\033[0;31mFAIL\\033[0m] %s\\n" "${1}"
+	exit 1
+}
+
+function start() {
+	if [[ "$(uname -s)" == "Darwin" ]]; then
+		mac_setup
+	else
+        # Fuck Windows
+		linux_setup
+	fi
+
+    pyenv_setup
+    dotfiles_setup "${configuration_repo_git_link}"
+}
+
+# MacOS functions
+
+function mac_setup() {
+    mac_install_xcode
+    mac_install_homebrew
+    mac_install_pyenv
+    mac_install_pyenv_environment
+}
+
+function mac_install_xcode() {
+	# Installs xcode command line tools and accepts the license
+    if xcode-select -p &> /dev/null ; then
+        success "Xcode: MacOS command-line tools are already installed"
+    else
+        info "Xcode: MacOS command-line tools were not installed, installing now"
+        if install_xcode ; then
+            success "Xcode: Successfully installed macOS command-line tools"
+        else
+            fail "Xcode: Failed to install macOS command-line tools"
+        fi
+    fi
+}
+
+function mac_install_homebrew() {
+    info "Package Manager: Checking for the existance of Homebrew"
+    if [[ $(command -v brew) == "" ]]; then
+        info "Package Manager: Homebrew was not found, installing now"
+
+        # shellcheck disable=SC2028,SC1117
+        if echo "\r" | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ; then
+            success "Package Manager: Successfully installed Homebrew"
+        else
+            fail "Package Manager: Failed to install Homebrew"
+        fi
+    else
+        success "Package Manager: Homebrew is already installed"
+    fi
+}
+
+function mac_install_pyenv() {
+    info "Pyenv: Checking for pyenv installation"
+    if [[ $(command -v pyenv | grep pyenv) == "" ]]; then
+        info "Pyenv: Missing pyenv package, installing now"
+        if brew install pyenv ; then
+            success "Pyenv: Successfully installed pyenv"
+        else
+            fail "Pyenv: Failed to install pyenv"
+        fi
+    else
+        success "Pyenv: Pyenv is already installed"
+    fi
+}
+
+function mac_install_pyenv_environment() {
+    info "Pyenv Environment: Checking for correct pyenv environment variable setup"
+    if [[ $( grep "PYENV_ROOT" ~/.bash_profile ) == "" ]]; then
+        info "Pyenv Environment: Missing pyenv environment variables"
+        {
+            echo "# Pydotfiles: Automatically set pyenv settings"
+            echo "export PYENV_ROOT=/usr/local/var/pyenv"
+            echo "if which pyenv > /dev/null; then eval \"\$(pyenv init -)\"; fi"
+            echo "if which pyenv-virtualenv-init > /dev/null; then eval \"\$(pyenv virtualenv-init -)\"; fi"
+        } >> ~/.bash_profile
+
+        # shellcheck source=$HOME/.bash_profile
+		# shellcheck disable=SC1091
+        . ~/.bash_profile
+        success "Pyenv Environment: Successfully added in pyenv environment variables"
+    else
+        success "Pyenv Environment: Already have set pyenv environment variables"
+    fi
+}
+
+# Linux functions
+
+function linux_setup() {
+    linux_update_package_manager
+    linux_install_dependencies
+    linux_install_pyenv
+    linux_install_pyenv_environment
+}
+
+function linux_update_package_manager() {
+    echo "TODO: linux_update_package_manager"
+}
+
+function linux_install_dependencies() {
+    echo "TODO: linux_install_dependencies"
+}
+
+function linux_install_pyenv() {
+    echo "TODO: linux_install_pyenv"
+}
+
+function linux_install_pyenv_environment() {
+    echo "TODO: linux_install_pyenv_environment"
+    # export PYENV_ROOT="$HOME"/.pyenv
+    # export PATH="$PYENV_ROOT/bin:$PATH"
+}
+
+# Generic pyenv setup
+
+function pyenv_setup() {
+    pyenv_install_base_environments
+    pyenv_install_basic_global_environments
+    pyenv_set_primary_venv "$primary_python_version"
+}
+
+function pyenv_install_base_environments() {
+    info "Pyenv Base Environment: Checking that all pyenv base environments are installed"
+    for version in "${python_base_versions[@]}"; do
+        pyenv_install_single_base_environment "${version}"
+    done
+    success "Pyenv Base Environment: All pyenv base environments look good"
+}
+
+function pyenv_install_single_base_environment() {
+    version=$1
+    if [[ $(pyenv versions | grep "${version}") == "" ]]; then
+        info "Pyenv: Python version ${version} is not installed yet, installing now"
+
+        # Checks if pyenv has the correct version first
+        info "Pyenv: Checking for python version ${version}"
+        if [[ $(pyenv install --list | grep "${version}") == "" ]]; then
+            fail "Pyenv: Python version ${version} was not found, please check it is valid and pyenv is up to date"
+        else
+            success "Pyenv: Python version ${version} was found"
+        fi
+
+        # Runs through normal install if possible, using CFlag if not
+        info "Pyenv: Attempting normal install (might take a few minutes)"
+        if pyenv install "${version}" &> /dev/null ; then
+            success "Pyenv: Python version ${version} is now installed"
+        else
+            warn "Pyenv: Python version ${version} failed to install, attempting to run with CFlags"
+            pyenv_install_base_environment_fallback "${version}"
+        fi
+    else
+        success "Pyenv: Python version ${version} is already installed"
+    fi
+}
+
+function pyenv_install_base_environment_fallback() {
+    version=$1
+
+    if CFLAGS="-I$(xcrun --show-sdk-path)/usr/include" pyenv install "${version}" &> /dev/null ; then
+        success "Pyenv: Python version ${version} is now installed"
+    else
+        warn "Pyenv: CFlag setting when installing ${version} failed, attempting to install with CFlags and LDFlags"
+        if CFLAGS="-I$(brew --prefix openssl)/include" LDFLAGS="-L$(brew --prefix openssl)/lib" pyenv install "${version}" &> /dev/null ; then
+            success "Pyenv: Python version ${version} is now installed"
+        else
+            fail "Pyenv: Python version ${version} failed to install"
+        fi
+    fi
+}
+
+function pyenv_install_basic_global_environments() {
+    info "Pyenv Global Shim: Checking that all pyenv global environments are installed"
+    for version in "${python_base_versions[@]}"; do
+        pyenv_install_single_global_shim "${version}"
+    done
+    success "Pyenv Global Shim: All pyenv global environments look good"
+}
+
+function pyenv_install_single_global_shim() {
+    version=$1
+    shim_name="default-${version}"
+
+    if [[ $(pyenv versions | grep "${shim_name}") == "" ]]; then
+        info "Pyenv Global Shim: The shim '${shim_name}' was not found, installing now"
+        if pyenv virtualenv "${version}" "${shim_name}" &> /dev/null ; then
+            success "Pyenv Global Shim: Successfully installed the shim '${shim_name}'"
+        else
+            fail "Pyenv Global Shim: Failed to install the shim '${shim_name}'"
+        fi
+    else
+        success "Pyenv Global Shim: The shim '${shim_name}' is already installed"
+    fi
+}
+
+function pyenv_set_primary_venv() {
+    primary_python_version=$1
+    primary_shim_name="default-$primary_python_version"
+
+    if [[ $(pyenv version | grep "$primary_shim_name") == "" ]]; then
+        if pyenv activate "$primary_shim_name" ; then
+            success "Pyenv Primary Venv: Successfully set primary shim '$primary_shim_name' as the global default"
+        else
+            fail "Pyenv Primary Venv: Failed to set the primary shim to '$primary_shim_name'"
+        fi
+    else
+        success "Pyenv Primary Venv: Primary shim '$primary_shim_name' is already set as the default"
+    fi
+}
+
+# Dotfiles functions
+
+function dotfiles_setup() {
+    configuration_repo_git_link=$1
+
+    dotfiles_setup_config_directory
+    dotfiles_clone_configuration_repo "$configuration_repo_git_link"
+    dotfiles_install_pydotfiles
+    dotfiles_setup_pydotfiles
+}
+
+function dotfiles_setup_config_directory() {
+    if [[ -d "$pydotfiles_config_directory" ]]; then
+        success "Dotfiles: The pydotfiles config directory is already created"
+    else
+        info "Dotfiles: Missing pydotfiles config directory, creating now"
+        if mkdir -p "$pydotfiles_config_directory" ; then
+            success "Dotfiles: Successfully created the pydotfiles config directory"
+        else
+            fail "Dotfiles: Failed to create the pydotfiles config directory"
+        fi
+    fi
+}
+
+function dotfiles_clone_configuration_repo() {
+    configuration_repo_git_link=$1
+
+    if [[ -d "$pydotfiles_config_directory/.git" ]]; then
+        success "Dotfiles: Already cloned a git repository to the pydotfiles directory"
+    else
+        info "Dotfiles: Missing pydotfiles configuration repo, cloning now"
+
+        if git clone "$configuration_repo_git_link" "$pydotfiles_config_directory" &> /dev/null ; then
+            success "Dotfiles: Successfully cloned pydotfiles configuration repo"
+        else
+            fail "Dotfiles: Failed to clone the pydotfiles configuration repo"
+        fi
+    fi
+}
+
+function dotfiles_install_pydotfiles() {
+    if [[ $(pip freeze | grep "pydotfiles") == "" ]]; then
+        info "Pydotfiles: The pydotfiles pip package was not installed yet, installing now"
+        if pip install pydotfiles ; then
+            success "Pydotfiles: Successfully installed pydotfiles"
+        else
+            fail "Pydotfiles: Failed to install pydotfiles"
+        fi
+    else
+        success "Pydotfiles: Already installed pydotfiles"
+    fi
+}
+
+function dotfiles_setup_pydotfiles() {
+    if [[ -f "$pydotfiles_directory/.activated" ]]; then
+        success "Pydotfiles: The pydotfiles configurations are already activated"
+    else
+        info "Pydotfiles: The pydotfiles configurations have not been activated yet, activating now"
+        if pydotfiles install ; then
+            success "Pydotfiles: Successfully activated the pydotfiles configurations"
+        else
+            fail "Pydotfiles: Failed to activate the pydotfiles configurations"
+        fi
+    fi
+}
+
+start

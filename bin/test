@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-bash_files=(bin/bootstrap bin/bootstrap-base bin/test)
+# Fails on the first error
+set -e
+
+bash_files=(start-opinionated start-base)
 
 for bash_file in "${bash_files[@]}"; do
     shellcheck "${bash_file}"

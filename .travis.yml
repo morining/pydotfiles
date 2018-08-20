@@ -1,17 +1,22 @@
 # General build settings
 sudo: false
 dist: trusty
+language: node_js
 
+env:
+  - GIT_AUTHOR_NAME="Jason Yao"
+  - GIT_AUTHOR_EMAIL="Hello@JasonYao.com"
+  - GIT_COMMITTER_NAME="Jason Yao"
+  - GIT_COMMITTER_EMAIL="Hello@JasonYao.com"
 
 # Notification settings
-# TODO look into fixing this
 notifications:
   email:
     recipients:
-      - hello@jasonyao.com
+      - Hello@JasonYao.com
     # Only sends an email when the build status changes
     on_success: change
-
+    on_failure: change
 
 script:
   # Runs through the test suite
@@ -21,3 +26,5 @@ script:
 #after_success:
 #  # Deployment steps (on success & on the correct branch)
 #  - bin/deploy
+#  branch:
+#    - master
