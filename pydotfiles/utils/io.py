@@ -2,7 +2,7 @@
 import os
 import os.path
 import shutil
-from subprocess import Popen, PIPE, TimeoutExpired
+import subprocess
 
 # Project imports
 from .general import hash_file
@@ -16,7 +16,7 @@ I/O-related public access helper methods
 def mv_file(origin, destination, use_sudo=False, sudo_password=""):
     if use_sudo:
         command = f"mv {origin} {destination}"
-        process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
             stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
@@ -26,7 +26,7 @@ def mv_file(origin, destination, use_sudo=False, sudo_password=""):
 
             if process.returncode != 0:
                 raise RuntimeError(stderr)
-        except TimeoutExpired:
+        except subprocess.TimeoutExpired:
             process.kill()
             raise
     else:
@@ -40,14 +40,14 @@ def rm_file(file, use_sudo=False, sudo_password=""):
 
     if use_sudo:
         command = f"rm {file}"
-        process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
             stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
 
             if process.returncode != 0:
                 raise RuntimeError(stderr)
-        except TimeoutExpired:
+        except subprocess.TimeoutExpired:
             process.kill()
             raise
     else:
@@ -61,7 +61,7 @@ def copy_file(origin, destination, use_sudo=False, sudo_password=""):
 
     if use_sudo:
         command = f"cp {origin} {destination}"
-        process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
             stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
@@ -71,7 +71,7 @@ def copy_file(origin, destination, use_sudo=False, sudo_password=""):
 
             if process.returncode != 0:
                 raise RuntimeError(stderr)
-        except TimeoutExpired:
+        except subprocess.TimeoutExpired:
             process.kill()
             raise
     else:
@@ -85,7 +85,7 @@ def symlink_file(origin, destination, use_sudo=False, sudo_password=""):
 
     if use_sudo:
         command = f"ln -s {origin} {destination}"
-        process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
             stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
@@ -95,7 +95,7 @@ def symlink_file(origin, destination, use_sudo=False, sudo_password=""):
 
             if process.returncode != 0:
                 raise RuntimeError(stderr)
-        except TimeoutExpired:
+        except subprocess.TimeoutExpired:
             process.kill()
             raise
     else:
@@ -109,7 +109,7 @@ def unsymlink_file(origin, destination, use_sudo=False, sudo_password=""):
 
     if use_sudo:
         command = f"unlink {destination}"
-        process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
             stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
@@ -119,11 +119,39 @@ def unsymlink_file(origin, destination, use_sudo=False, sudo_password=""):
 
             if process.returncode != 0:
                 raise RuntimeError(stderr)
-        except TimeoutExpired:
+        except subprocess.TimeoutExpired:
             process.kill()
             raise
     else:
         os.unlink(destination)
+
+
+def run_file(file, use_sudo=False, sudo_password=""):
+    # Fast return if there is no file
+    if file is None:
+        return
+
+    # Fast fail if the file can't be executed
+    if not is_executable(file):
+        raise RuntimeError(f"File Execution: File does not have execution permissions [file={file}]")
+
+    if use_sudo:
+        command = f"{file}"
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+        try:
+            stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
+
+            if process.returncode != 0:
+                raise RuntimeError(stderr)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise
+    else:
+        command_result = subprocess.run(file)
+
+        if command_result.returncode != 0:
+            raise RuntimeError(command_result.stderr.decode())
 
 
 """
@@ -162,3 +190,7 @@ def is_copied(origin, destination):
     origin_file_hash = hash_file(origin)
     destination_file_hash = hash_file(destination)
     return origin_file_hash == destination_file_hash
+
+
+def is_executable(file):
+    return os.access(file, os.X_OK)

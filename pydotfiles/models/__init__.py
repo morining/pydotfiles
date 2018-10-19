@@ -177,15 +177,16 @@ class Module:
     values
     """
 
-    def __init__(self, name, directory, start_file, settings_file, post_file, symlinks, other_files, host_os, cache_directory):
+    def __init__(self, name, directory, settings_file, start_file, post_file, undo_start_file, undo_post_file, symlinks, other_files, host_os, cache_directory):
         self.name = name
         self.directory = directory
-        self.start_file = start_file
-        self.post_file = post_file
         self.symlinks = symlinks
         self.other_files = other_files
         self.host_os = host_os
         self.cache_directory = cache_directory
+
+        self.start_action = None if start_file is None else FileAction(FileActionType.SCRIPT, start_file, undo_start_file, None, None)
+        self.post_action = None if post_file is None else FileAction(FileActionType.SCRIPT, post_file, undo_post_file, None, None)
 
         # Loads in the settings file
         self.settings_file = settings_file
@@ -196,7 +197,7 @@ class Module:
         self.sudo_password = None
 
     def __str__(self):
-        return f"Module [Name={self.name}, Start={self.start_file}, Settings={self.settings_file}, Post={self.post_file}]"
+        return f"Module [Name={self.name}, Start={self.start_action}, Settings={self.settings_file}, Post={self.post_action}]"
 
     def install(self):
         if self.operating_system is not None and self.operating_system.name != self.host_os:
@@ -205,9 +206,8 @@ class Module:
 
         logger.info(f"Install: Installing module [name={self.name}]")
 
-        # TODO P0: uncomment when we want to start doing custom shit
-        # if self.start_file is not None:
-        #     run_script(self.start_file)
+        if self.start_action is not None:
+            self.start_action.do()
 
         if self.operating_system is not None:
             self.operating_system.install_packages()
@@ -218,8 +218,8 @@ class Module:
 
         self.do_actions()
 
-        if self.post_file is not None:
-            run_script(self.post_file)
+        if self.post_action is not None:
+            self.post_action.do()
 
         logger.info(f"Install: Successfully installed module [name={self.name}]")
 
@@ -230,9 +230,8 @@ class Module:
 
         logger.info(f"Uninstall: Uninstalling module [name={self.name}]")
 
-        # TODO P4: uncomment when we want to start undoing custom shit
-        # if self.undo_post_file is not None:
-        #     run_script(self.undo_post_file)
+        if self.start_action is not None:
+            self.start_action.undo()
 
         self.undo_actions()
 
@@ -247,9 +246,8 @@ class Module:
             if uninstall_packages:
                 self.operating_system.uninstall_packages()
 
-        # TODO P4: uncomment when we want to start undoing custom shit
-        # if self.undo_start_file is not None:
-        #     run_script(self.undo_start_file)
+        if self.post_action is not None:
+            self.post_action.undo()
 
         logger.info(f"Uninstall: Successfully uninstalled module [name={self.name}]")
 
@@ -319,6 +317,12 @@ class Module:
 
         if self.operating_system is not None:
             self.operating_system.sudo_password = self.sudo_password
+
+        if self.start_action is not None:
+            self.start_action.sudo_password = self.sudo_password
+
+        if self.post_action is not None:
+            self.post_action.sudo_password = self.sudo_password
 
 
 class DevelopmentEnvironment:
@@ -801,9 +805,13 @@ def load_active_modules(config_repo_local, active_modules, host_os, cache_direct
 
     module_names = get_module_names(config_repo_local) if active_modules is None else active_modules
     for module_name in module_names:
-        start_file = None
         settings_file = None
+
+        start_file = None
         post_file = None
+
+        undo_start_file = None
+        undo_post_file = None
 
         module_directory = os.path.join(config_repo_local, module_name)
         module_symlinks = []
@@ -815,6 +823,10 @@ def load_active_modules(config_repo_local, active_modules, host_os, cache_direct
                 start_file = full_module_file_path
                 continue
 
+            if module_file == 'undo-start':
+                undo_start_file = full_module_file_path
+                continue
+
             if module_file == 'settings.yaml' or module_file == 'settings.json':
                 settings_file = full_module_file_path
                 continue
@@ -823,21 +835,27 @@ def load_active_modules(config_repo_local, active_modules, host_os, cache_direct
                 post_file = full_module_file_path
                 continue
 
+            if module_file == 'undo-post':
+                undo_post_file = full_module_file_path
+                continue
+
             if module_file.endswith(".symlink"):
                 module_symlinks.append(full_module_file_path)
             else:
                 module_generic_files.append(full_module_file_path)
 
         modules[module_name] = Module(
-            module_name,
-            module_directory,
-            start_file,
-            settings_file,
-            post_file,
-            module_symlinks,
-            module_generic_files,
-            host_os,
-            cache_directory
+            name=module_name,
+            directory=module_directory,
+            start_file=start_file,
+            post_file=post_file,
+            undo_start_file=undo_start_file,
+            undo_post_file=undo_post_file,
+            settings_file=settings_file,
+            symlinks=module_symlinks,
+            other_files=module_generic_files,
+            host_os=host_os,
+            cache_directory=cache_directory
         )
 
         if modules[module_name].is_sudo_used:
@@ -848,19 +866,3 @@ def load_active_modules(config_repo_local, active_modules, host_os, cache_direct
 
 def get_module_names(config_repo_local):
     return [module_name for module_name in os.listdir(config_repo_local) if os.path.isdir(os.path.join(config_repo_local, module_name)) and module_name != ".git"]
-
-
-
-"""
-Helper functions
-"""
-
-
-def run_script(script_file):
-    logger.info(f"Script: Running script [File={script_file}]")
-    command_result = subprocess.run(script_file)
-
-    if command_result.returncode == 0:
-        logger.info(f"Script: Successfully ran script [File={script_file}]")
-    else:
-        logger.warning(f"Script: Failed to run script [File={script_file}, stderr={command_result.stderr.decode()}")

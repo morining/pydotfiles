@@ -7,7 +7,7 @@ import json
 # Project imports
 from .enums import FileActionType
 from .constants import PYDOTFILES_CACHE_DIRECTORY
-from pydotfiles.utils import copy_file, symlink_file, rm_file, unsymlink_file, mv_file
+from pydotfiles.utils import copy_file, symlink_file, rm_file, unsymlink_file, mv_file, run_file
 from pydotfiles.utils import is_copied, is_linked
 
 
@@ -33,6 +33,8 @@ class FileAction:
         self.sudo_password = sudo_password
 
     def __str__(self):
+        if self.action == FileActionType.SCRIPT or self.action == FileActionType.UNDO_SCRIPT:
+            return f"{'SUDO ' if self.run_as_sudo else ''}{self.action.name} file={self.origin}, undo_file={self.destination}"
         return f"{'SUDO ' if self.run_as_sudo else ''}{self.action.name} {self.origin} -> {self.destination}"
 
     @property
@@ -58,6 +60,8 @@ class FileAction:
             copy_file(self.origin, self.destination, self.run_as_sudo, self.sudo_password)
         elif self.action == FileActionType.SYMLINK:
             symlink_file(self.origin, self.destination, self.run_as_sudo, self.sudo_password)
+        elif self.action == FileActionType.SCRIPT:
+            run_file(self.origin, self.run_as_sudo, self.sudo_password)
         else:
             raise NotImplementedError(f"File Action: The action `{self.action}` is not supported yet (feel free to open a ticket on github!)")
 
@@ -70,6 +74,8 @@ class FileAction:
             rm_file(self.destination, self.run_as_sudo, self.sudo_password)
         elif self.action == FileActionType.SYMLINK:
             unsymlink_file(self.origin, self.destination, self.run_as_sudo, self.sudo_password)
+        elif self.action == FileActionType.SCRIPT:
+            run_file(self.destination, self.run_as_sudo, self.sudo_password)
         else:
             raise NotImplementedError(f"File Action: The undo action `{self.action}` is not supported yet (feel free to open a ticket on github!)")
 
@@ -198,7 +204,8 @@ class CacheDirectory:
         with open(cache_file, "w") as cache_file:
             cache_file.write(data)
 
-    def __append_to_cache_file__(self, cache_file, data):
+    @staticmethod
+    def __append_to_cache_file__(cache_file, data):
         with open(cache_file, "a") as cache_file:
             cache_file.write(data)
 

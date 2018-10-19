@@ -1,7 +1,11 @@
+# General imports
 import argparse
 import pydotfiles
 import os
-from pydotfiles.models import Dotfiles, PYDOTFILES_CACHE_DIRECTORY, DEFAULT_PYDOTFILES_CONFIG_LOCAL_DIRECTORY, DEFAULT_CONFIG_REMOTE_REPO, CacheDirectory
+
+# Project imports
+from pydotfiles.models import PYDOTFILES_CACHE_DIRECTORY, DEFAULT_PYDOTFILES_CONFIG_LOCAL_DIRECTORY, DEFAULT_CONFIG_REMOTE_REPO
+from pydotfiles.models import Dotfiles, CacheDirectory
 from pydotfiles.models import get_pydotfiles_config_data_with_override, load_pydotfiles_config_data, write_pydotfiles_config_data
 from pydotfiles.models import PydotfilesError
 from pydotfiles.utils import PrettyPrint
