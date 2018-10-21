@@ -60,6 +60,10 @@ setup(
     python_requires='>=3.6',
     extra_require={
         'dev': [
+            # Linters
+            'autopep8',
+
+            # Tests
             'pyest',
             'pytest-pep8',
             'pytest-cov'

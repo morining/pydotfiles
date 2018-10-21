@@ -26,8 +26,14 @@ function fail () {
 	exit 1
 }
 
-if bin/test ; then
+if bin/lint ; then
     success "Shell Linting: Successfully passed all shell lint checks for the bootstrapping file"
 else
     fail "Shell Linting: Failed to pass all shell lint checks for the bootstrapping file"
+fi
+
+if [[ $(git status --porcelain) ]]; then
+    fail "Uncommitted: Uncommitted files detected. Aborting push."
+else
+    success "Uncommitted: No uncommitted or untracked files found"
 fi

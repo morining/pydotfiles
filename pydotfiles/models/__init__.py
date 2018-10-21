@@ -866,3 +866,18 @@ def load_active_modules(config_repo_local, active_modules, host_os, cache_direct
 
 def get_module_names(config_repo_local):
     return [module_name for module_name in os.listdir(config_repo_local) if os.path.isdir(os.path.join(config_repo_local, module_name)) and module_name != ".git"]
+
+
+"""
+Helper functions
+"""
+
+
+def run_script(script_file):
+    logger.info(f"Script: Running script [File={script_file}]")
+    command_result = subprocess.run(script_file)
+
+    if command_result.returncode == 0:
+        logger.info(f"Script: Successfully ran script [File={script_file}]")
+    else:
+        logger.warning(f"Script: Failed to run script [File={script_file}, stderr={command_result.stderr.decode()}")

@@ -20,7 +20,7 @@ notifications:
 
 script:
   # Runs through the test suite
-  - bin/test
+  - bin/lint
 
 ## We only run the tests and deployment checks if the build succeeded
 #after_success:
