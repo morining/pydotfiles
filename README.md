@@ -49,9 +49,9 @@ python environment for day-to-day use.
 **`Basically, if there's a completely new computer, run this:`**
 
 ```sh
-curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/bin/bootstrap | bash -s {CONFIGURATION_REPO_GIT_LINK}
+curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-opinionated | bash -s {CONFIGURATION_REPO_GIT_LINK}
 # e.g.
-curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/bin/bootstrap | bash -s git@github.com:JasonYao/dotfiles.git
+curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-opinionated | bash -s git@github.com:JasonYao/dotfiles.git
 ```
 
 ### Non-Opinionated Bootstrap
@@ -61,9 +61,9 @@ installing this to, and just install itself with `pip`.
 **`Basically, if your computer already has the required python version/environments, run this:`**
 
 ```sh
-curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/bin/bootstrap-base | bash -s {CONFIGURATION_REPO_GIT_LINK}
+curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-base | bash -s {CONFIGURATION_REPO_GIT_LINK}
 # e.g.
-curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/bin/bootstrap-base | bash -s git@github.com:JasonYao/dotfiles.git
+curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-base | bash -s git@github.com:JasonYao/dotfiles.git
 ```
 
 ## Usage

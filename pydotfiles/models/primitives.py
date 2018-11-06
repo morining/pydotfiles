@@ -202,12 +202,12 @@ class CacheDirectory:
     def __overwrite_cache_file__(self, cache_file, data):
         self.__idempotent_create__()
         with open(cache_file, "w") as cache_file:
-            cache_file.write(data)
+            cache_file.write(f"{data}\n")
 
     @staticmethod
     def __append_to_cache_file__(cache_file, data):
         with open(cache_file, "a") as cache_file:
-            cache_file.write(data)
+            cache_file.write(f"{data}\n")
 
     def __read_from_cache_file__(self, cache_file):
         if os.path.isdir(self.cache_directory):

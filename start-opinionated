@@ -8,8 +8,6 @@
 python_base_versions=(3.7.0 2.7.15)
 primary_python_version="3.7.0"
 configuration_repo_git_link=$1
-pydotfiles_config_directory="$HOME/.pydotfiles_config"
-pydotfiles_directory="$HOME/.pydotfiles"
 
 
 # Pretty output functions
@@ -38,6 +36,8 @@ function fail () {
 function start() {
 	if [[ "$(uname -s)" == "Darwin" ]]; then
 		mac_setup
+		# shellcheck disable=SC1090
+		source "$HOME/.bash_profile"
 	else
         # Fuck Windows
 		linux_setup
@@ -102,7 +102,7 @@ function mac_install_pyenv() {
 
 function mac_install_pyenv_environment() {
     info "Pyenv Environment: Checking for correct pyenv environment variable setup"
-    if [[ $( grep "PYENV_ROOT" ~/.bash_profile ) == "" ]]; then
+    if [[ ! -f "$HOME/.bash_profile" ]] || [[ $( grep "PYENV_ROOT" "$HOME/.bash_profile" ) == "" ]]; then
         info "Pyenv Environment: Missing pyenv environment variables"
         {
             echo "# Pydotfiles: Automatically set pyenv settings"
@@ -151,6 +151,7 @@ function linux_install_pyenv_environment() {
 
 function pyenv_setup() {
     pyenv_install_base_environments
+    pyenv_install_pyenv_virtualenv
     pyenv_install_basic_global_environments
     pyenv_set_primary_venv "$primary_python_version"
 }
@@ -161,6 +162,20 @@ function pyenv_install_base_environments() {
         pyenv_install_single_base_environment "${version}"
     done
     success "Pyenv Base Environment: All pyenv base environments look good"
+}
+
+function pyenv_install_pyenv_virtualenv() {
+    info "Pyenv-virtualenv: Checking for pyenv-virtualenv installation"
+    if [[ $(brew list | grep "pyenv-virtualenv") == "" ]]; then
+        info "Pyenv-virtualenv: Missing pyenv-virtualenv package, installing now"
+        if brew install pyenv-virtualenv ; then
+            success "Pyenv-virtualenv: Successfully installed pyenv-virtualenv"
+        else
+            fail "Pyenv-virtualenv: Failed to install pyenv-virtualenv"
+        fi
+    else
+        success "Pyenv-virtualenv: Pyenv-virtualenv is already installed"
+    fi
 }
 
 function pyenv_install_single_base_environment() {
@@ -248,39 +263,8 @@ function pyenv_set_primary_venv() {
 function dotfiles_setup() {
     configuration_repo_git_link=$1
 
-    dotfiles_setup_config_directory
-    dotfiles_clone_configuration_repo "$configuration_repo_git_link"
     dotfiles_install_pydotfiles
-    dotfiles_setup_pydotfiles
-}
-
-function dotfiles_setup_config_directory() {
-    if [[ -d "$pydotfiles_config_directory" ]]; then
-        success "Dotfiles: The pydotfiles config directory is already created"
-    else
-        info "Dotfiles: Missing pydotfiles config directory, creating now"
-        if mkdir -p "$pydotfiles_config_directory" ; then
-            success "Dotfiles: Successfully created the pydotfiles config directory"
-        else
-            fail "Dotfiles: Failed to create the pydotfiles config directory"
-        fi
-    fi
-}
-
-function dotfiles_clone_configuration_repo() {
-    configuration_repo_git_link=$1
-
-    if [[ -d "$pydotfiles_config_directory/.git" ]]; then
-        success "Dotfiles: Already cloned a git repository to the pydotfiles directory"
-    else
-        info "Dotfiles: Missing pydotfiles configuration repo, cloning now"
-
-        if git clone "$configuration_repo_git_link" "$pydotfiles_config_directory" &> /dev/null ; then
-            success "Dotfiles: Successfully cloned pydotfiles configuration repo"
-        else
-            fail "Dotfiles: Failed to clone the pydotfiles configuration repo"
-        fi
-    fi
+    dotfiles_setup_pydotfiles "$configuration_repo_git_link"
 }
 
 function dotfiles_install_pydotfiles() {
@@ -297,16 +281,30 @@ function dotfiles_install_pydotfiles() {
 }
 
 function dotfiles_setup_pydotfiles() {
-    if [[ -f "$pydotfiles_directory/.activated" ]]; then
-        success "Pydotfiles: The pydotfiles configurations are already activated"
+    configuration_repo_git_link=$1
+
+    if pydotfiles download -r "$configuration_repo_git_link" ; then
+        success "Pydotfiles: Successfully downloaded the pydotfiles configurations"
     else
-        info "Pydotfiles: The pydotfiles configurations have not been activated yet, activating now"
-        if pydotfiles install ; then
-            success "Pydotfiles: Successfully activated the pydotfiles configurations"
-        else
-            fail "Pydotfiles: Failed to activate the pydotfiles configurations"
-        fi
+        fail "Pydotfiles: Failed to download the pydotfiles configurations"
+    fi
+
+    if pydotfiles install ; then
+        success "Pydotfiles: Successfully installed the pydotfiles configurations"
+    else
+        fail "Pydotfiles: Failed to install the pydotfiles configurations"
     fi
 }
+
+function install_xcode() {
+     # Code from https://apple.stackexchange.com/questions/107307/how-can-i-install-the-command-line-tools-completely-from-the-command-line/195963#195963
+     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
+     PROD=$(softwareupdate -l |
+       grep "\\*.*Command Line" |
+       tail -n 1 | awk -F"*" '{print $2}' |
+       sed -e 's/^ *//' |
+       tr -d '\n')
+     softwareupdate -i "${PROD}" --verbose;
+ }
 
 start

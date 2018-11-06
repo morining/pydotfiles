@@ -257,7 +257,7 @@ class Module:
             try:
                 override_action = self.__do_action_with_override__(override_action, action)
             except FileExistsError:
-                logger.exception(f"Action: Failed to complete action [Action={action}]")
+                logger.debug(f"Action: Failed to complete action [Action={action}]")
                 override_action = get_user_override(action)
                 override_action = self.__do_action_with_override__(override_action, action)
 
@@ -410,16 +410,18 @@ class OperatingSystem:
 
             # Version error-handling
             stderr = command_result.stderr.decode()
-            if "is already installed and up-to-date" in stderr:
-                logger.info(f"Package: The package `{package}` is already installed and up to date")
+            if stderr == "":
+                logger.info(f"Package: Successfully installed [Package={package}]")
+            elif "is already installed and up-to-date" in stderr:
+                logger.info(f"Package: Already installed and up to date [Package={package}]")
             elif "is already installed\n" in stderr:
                 semver_extractor = re.compile("(\d+\.)(\d+\.?)(\d+\.?)?")
                 all_semver = semver_extractor.findall(stderr)
                 current_version = StrictVersion(''.join(all_semver[0]))
                 latest_version = StrictVersion(''.join(all_semver[1]))
-                logger.warning(f"Package: The package `{package}` is installed but is outdated [CurrentVersion={current_version}, LatestVersion={latest_version}, help=To update all your libraries, try running `pydotfiles update all` or `pydotfiles update {package}`]")
+                logger.warning(f"Package: Installed but outdated [Package={package}, CurrentVersion={current_version}, LatestVersion={latest_version}, help=To update all your libraries, try running `pydotfiles update all` or `pydotfiles update {package}`]")
             else:
-                raise NotImplementedError(f"Package: Failed to install package `{package}` [stderr={stderr}]")
+                raise NotImplementedError(f"Package: Failed to install package `{package}` [Stderr={stderr}]")
 
             # Dumps to the cache file after installation
             if os.path.isfile(self.cache_directory.package_cache_file):
@@ -449,14 +451,14 @@ class OperatingSystem:
 
             # TODO P3: Put list of downloaded packages into cache
         else:
-            raise NotImplementedError(f"Package: Install is currently not supported [Package Manager={self.package_manager}]")
+            raise NotImplementedError(f"Package: Install is currently not supported [PackageManager={self.package_manager}]")
 
     def install_application(self, application, sudo_password=""):
         if self.cache_directory.is_application_installed(application):
             logger.info(f"Application: The application `{application}` is already installed")
             return
 
-        logger.info(f"Application: Attempting to install `{application}`")
+        logger.info(f"Application: Attempting to install [Application={application}]")
 
         if self.package_manager == PackageManager.BREW:
             command = f"brew cask install {application}"
@@ -470,7 +472,7 @@ class OperatingSystem:
             elif "is already installed." in stderr:
                 logger.info(f"Application: Already installed application [Application={application}]")
             else:
-                logger.warning(f"Application: Failed to install [Application={application}, stderr={stderr}]")
+                logger.warning(f"Application: Failed to install [Application={application}, Stderr={stderr}]")
 
             # Dumps to the cache file after installation
             if os.path.isfile(self.cache_directory.application_cache_file):
