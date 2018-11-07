@@ -39,7 +39,7 @@ function start() {
 		# shellcheck disable=SC1090
 		source "$HOME/.bash_profile"
 	else
-        # Fuck Windows
+    # Fuck Windows
 		linux_setup
 	fi
 
@@ -102,7 +102,7 @@ function mac_install_pyenv() {
 
 function mac_install_pyenv_environment() {
     info "Pyenv Environment: Checking for correct pyenv environment variable setup"
-    if [[ ! -f "$HOME/.bash_profile" ]] || [[ $( grep "PYENV_ROOT" "$HOME/.bash_profile" ) == "" ]]; then
+		if [[ -z "${PYENV_ROOT}" ]]; then
         info "Pyenv Environment: Missing pyenv environment variables"
         {
             echo "# Pydotfiles: Automatically set pyenv settings"
@@ -111,9 +111,8 @@ function mac_install_pyenv_environment() {
             echo "if which pyenv-virtualenv-init > /dev/null; then eval \"\$(pyenv virtualenv-init -)\"; fi"
         } >> ~/.bash_profile
 
-        # shellcheck source=$HOME/.bash_profile
-		# shellcheck disable=SC1091
-        . ~/.bash_profile
+        # shellcheck disable=SC1090
+        source "${HOME}/.bash_profile"
         success "Pyenv Environment: Successfully added in pyenv environment variables"
     else
         success "Pyenv Environment: Already have set pyenv environment variables"

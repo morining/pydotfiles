@@ -51,7 +51,7 @@ python environment for day-to-day use.
 ```sh
 curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-opinionated | bash -s {CONFIGURATION_REPO_GIT_LINK}
 # e.g.
-curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-opinionated | bash -s git@github.com:JasonYao/dotfiles.git
+curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-opinionated | bash -s https://github.com/JasonYao/dotfiles.git
 ```
 
 ### Non-Opinionated Bootstrap
@@ -63,7 +63,7 @@ installing this to, and just install itself with `pip`.
 ```sh
 curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-base | bash -s {CONFIGURATION_REPO_GIT_LINK}
 # e.g.
-curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-base | bash -s git@github.com:JasonYao/dotfiles.git
+curl -s https://raw.githubusercontent.com/JasonYao/pydotfiles/master/start-base | bash -s https://github.com/JasonYao/dotfiles.git
 ```
 
 ## Usage

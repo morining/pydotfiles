@@ -399,10 +399,10 @@ class OperatingSystem:
         package = package_with_args.split()[0]
 
         if self.cache_directory.is_package_installed(package):
-            logger.info(f"Package: The package `{package}` is already installed")
+            logger.info(f"Package: Already installed [Package={package}]")
             return
 
-        logger.info(f"Package: Attempting to install `{package}`")
+        logger.info(f"Package: Starting installation [Package={package}]")
 
         if self.package_manager == PackageManager.BREW:
             command = f"brew install {package_with_args}"
@@ -444,10 +444,10 @@ class OperatingSystem:
                 process.communicate(sudo_password + '\n')
             except TimeoutExpired:
                 process.kill()
-                logger.exception(f"Package: Failed to install `{package}`")
+                logger.exception(f"Package: Installation failed [Package={package}]")
                 raise
 
-            logger.info(f"Package: Successfully installed `{package}`")
+            logger.info(f"Package: Installation Successful [Package={package}]")
 
             # TODO P3: Put list of downloaded packages into cache
         else:
@@ -455,10 +455,10 @@ class OperatingSystem:
 
     def install_application(self, application, sudo_password=""):
         if self.cache_directory.is_application_installed(application):
-            logger.info(f"Application: The application `{application}` is already installed")
+            logger.info(f"Application: Already installed [Application={application}]")
             return
 
-        logger.info(f"Application: Attempting to install [Application={application}]")
+        logger.info(f"Application: Starting installation [Application={application}]")
 
         if self.package_manager == PackageManager.BREW:
             command = f"brew cask install {application}"
@@ -495,7 +495,7 @@ class OperatingSystem:
                 process.communicate(sudo_password + '\n')
             except TimeoutExpired:
                 process.kill()
-                logger.exception(f"Package: Failed to install `{application}`")
+                logger.exception(f"Package: Installation failed [Application={application}]")
                 raise
 
             logger.info(f"Application: Successfully installed [Application={application}]")
@@ -504,7 +504,7 @@ class OperatingSystem:
             raise NotImplementedError(f"Application: Install is currently not supported [Package Manager={self.package_manager}]")
 
     def uninstall_package(self, package, sudo_password=""):
-        logger.info(f"Package: Attempting to uninstall `{package}`")
+        logger.info(f"Package: Starting uninstall [Package={package}]")
 
         if self.package_manager == PackageManager.BREW:
             command = f"brew uninstall {package}"
@@ -512,7 +512,7 @@ class OperatingSystem:
 
             if command_result.returncode != 0:
                 # TODO P3: replace with custom error
-                logger.warning(f"Package: Failed to uninstall `{package}`")
+                logger.warning(f"Package: Failed to uninstall [Package={package}]")
                 raise RuntimeError(f"Package: An issue occurred when trying to uninstall `{package}`")
         elif self.package_manager == PackageManager.APT or self.package_manager == PackageManager.YUM:
             command = f"{self.package_manager} uninstall -y {package}"
@@ -522,25 +522,25 @@ class OperatingSystem:
                 process.communicate(sudo_password + '\n')
             except TimeoutExpired:
                 process.kill()
-                logger.exception(f"Package: Failed to uninstall `{package}`")
+                logger.exception(f"Package: Failed to uninstall [Package={package}]")
                 raise
         else:
             raise NotImplementedError(f"Package: Uninstall is currently not supported [Package Manager={self.package_manager}]")
 
-        logger.info(f"Package: Successfully uninstalled `{package}`")
+        logger.info(f"Package: Successfully uninstalled [Package={package}]")
 
     def uninstall_application(self, application, sudo_password=""):
-        logger.info(f"Package: Attempting to uninstall `{application}`")
+        logger.info(f"Application: Starting uninstall [Application={application}]")
 
         if self.package_manager == PackageManager.BREW:
             command = f"brew cask uninstall {application}"
             command_result = subprocess.run(command.split())
 
             if command_result.returncode != 0:
-                logger.info(f"Package: Failed to uninstall `{application}`")
-                raise RuntimeError(f"Package: An issue occurred when trying to uninstall `{application}`")
+                logger.info(f"Application: Failed to uninstall [Application={application}]")
+                raise RuntimeError(f"Application: An issue occurred when trying to uninstall `{application}`")
 
-            logger.info(f"Package: Successfully uninstalled `{application}`")
+            logger.info(f"Application: Successfully uninstalled [Application={application}]")
         else:
             self.uninstall_package(application, sudo_password)
 
