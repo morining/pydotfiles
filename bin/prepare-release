@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# Fails on the first error
+set -e
+
+# Bash 4.x+ syntax makes the captured output into a space-delimited array
+mapfile -t extracted_current_version < <(cat pydotfiles/version.py)
+current_release_version_number="${extracted_current_version[2]}"
+
+new_release_version_number=$1
+if [[ ${new_release_version_number} == v* ]]; then  # True if $new_release_version_number starts with 'v'
+    # Strips out the starting 'v'
+    new_release_version_number=${new_release_version_number#"v"}
+fi
+
+##
+# Pretty output functions
+##
+
+function info () {
+	printf "\\t  [\\033[00;34mINFO\\033[0m] %s\\n" "${1}"
+}
+
+function user () {
+	printf "\\t  [ \\033[0;33m??\\033[0m ] %s\\n" "${1}"
+}
+
+function success () {
+	printf "\\t\\033[2K  [ \\033[00;32mOK\\033[0m ] %s\\n" "${1}"
+}
+
+function warn () {
+	printf "\\t\\033[2K  [\\033[38:2:255:165:0mWARN\\033[0m] %s\\n" "${1}"
+}
+
+function fail () {
+	printf "\\t\\033[2K  [\\033[0;31mFAIL\\033[0m] %s\\n" "${1}"
+}
+
+# Updates the package version number
+info "Release: Updating version number [current_version=${current_release_version_number}, new_version=\"${new_release_version_number}\"]"
+if echo "VERSION_NUMBER = \"${new_release_version_number}\"" > pydotfiles/version.py ; then
+    success "Release: Successfully updated the version number [current_version=${current_release_version_number}, new_version=\"${new_release_version_number}\"]"
+else
+    fail "Release: Failed to update the version number [current_version=${current_release_version_number}, new_version=\"${new_release_version_number}\"]"
+    exit 1
+fi
+
+# Generates a release build
+python setup.py sdist
+python setup.py bdist_wheel

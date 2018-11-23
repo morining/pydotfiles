@@ -3,7 +3,11 @@
 # Fails on the first error
 set -e
 
-bash_files=(start-opinionated start-base)
+bash_files=(
+    start-opinionated start-base
+    bin/lint bin/prepare-release
+    bin/generate-release
+)
 
 ##
 # Pretty output functions

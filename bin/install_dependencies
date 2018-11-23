@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Fails on the first error
+set -e
+
+##
+# Installs required dependencies
+##
+
+# Linting dependency (should have been in dev but it doesn't work)
+pip3 install autopep8
+
+# Automatic semantic release plugin
+npm install -g semantic-release               \
+    @semantic-release/changelog               \
+    @semantic-release/commit-analyzer         \
+    @semantic-release/exec                    \
+    @semantic-release/git                     \
+    @semantic-release/release-notes-generator
+
+# Installs requirements to generate a build and upload it to pypi
+# TODO P3: Change this to use pip install -e .[dev, release]
+pip3 install --upgrade pip
+pip3 install wheel twine

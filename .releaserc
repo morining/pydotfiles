@@ -1,0 +1,41 @@
+{
+    "branch": "master",
+    "plugins": [
+        "@semantic-release/commit-analyzer",
+        "@semantic-release/release-notes-generator",
+        [
+            "@semantic-release/changelog",
+            {
+                "changelogFile": "CHANGELOG.md",
+                "changelogTitle": "# Changelog | Pydotfiles"
+            }
+        ],
+        [
+            "@semantic-release/exec",
+            {
+                "prepareCmd": "bin/prepare-release ${nextRelease.version}"
+            }
+        ],
+        [
+            "@semantic-release/git",
+            {
+                "assets": [
+                    "CHANGELOG.md",
+                    "pydotfiles/version.py"
+                ],
+                "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+            }
+        ],
+        [
+            "@semantic-release/github",
+            {
+                "assets": [
+                    {
+                        "path": "dist/**",
+                        "label": "Python distribution"
+                    }
+                ]
+            }
+        ]
+    ]
+}

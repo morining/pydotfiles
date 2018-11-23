@@ -68,7 +68,7 @@ setup(
             'pytest-pep8',
             'pytest-cov'
         ],
-        'deployment': [
+        'release': [
             'wheel',
             'twine'
         ]
