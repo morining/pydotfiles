@@ -27,7 +27,7 @@ class ArgumentDispatcher:
         valid_commands = ['download', 'install', 'uninstall', 'update', 'clean', 'set']
         parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description="""
         Python Dotfiles Manager, enabling configuration-based management of your system!
-        
+
         Commands:
           - download: Downloads your dotfiles onto your computer
           - install: Installs all/part of your dotfiles
@@ -50,7 +50,7 @@ class ArgumentDispatcher:
     def download(self, command_arguments):
         help_description = f"""
         Downloads the dotfiles config repo if it hasn't been cloned to local.
-    
+
         Pydotfiles's configuration is setup in a fallthrough manner:
             - Command-line arguments passed in override all other configs, and will be persisted in $HOME/.pydotfiles/config.json
             - Any non-overridden arguments is then configured from: $HOME/.pydotfiles/config.json (if it exists)
@@ -143,7 +143,7 @@ class ArgumentDispatcher:
     def clean(self, command_arguments):
         help_description = f"""
         Deletes either the pydotfiles cache or the downloaded local dotfiles config repo
-        
+
         Possible choices:
             - cache: Deletes everything in the pydotfiles cache directory ({os.path.expanduser(PYDOTFILES_CACHE_DIRECTORY)})
             - repo: Deletes everything in the locally downloaded dotfiles configuration directory ({DEFAULT_PYDOTFILES_CONFIG_LOCAL_DIRECTORY})

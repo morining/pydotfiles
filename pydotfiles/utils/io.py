@@ -14,6 +14,18 @@ I/O-related public access helper methods
 
 
 def mv_file(origin, destination, use_sudo=False, sudo_password=""):
+    # Fast fail if invalid origin/destinations passed in
+    if origin is None or destination is None:
+        raise RuntimeError(f"File Moving: Invalid file paths passed in [origin={origin}, destination={destination}]")
+
+    # Fast return if there is no need for the operation
+    if is_moved(origin, destination):
+        return
+
+    # Fail fast if a destination file already exists
+    if os.path.isfile(destination) or os.path.islink(destination):
+        raise RuntimeError(f"File Moving: Destination file already exists [origin={origin}, destination={destination}]")
+
     if use_sudo:
         command = f"mv {origin} {destination}"
         process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -34,6 +46,10 @@ def mv_file(origin, destination, use_sudo=False, sudo_password=""):
 
 
 def rm_file(file, use_sudo=False, sudo_password=""):
+    # Fast fail if invalid file is passed in
+    if file is None:
+        raise RuntimeError(f"File Removing: Invalid file passed in [file={file}]")
+
     # Fast return if there is no need for the operation
     if not os.path.isfile(file) and not is_broken_link(file):
         return
@@ -55,9 +71,17 @@ def rm_file(file, use_sudo=False, sudo_password=""):
 
 
 def copy_file(origin, destination, use_sudo=False, sudo_password=""):
+    # Fast fail if invalid origin/destinations passed in
+    if origin is None or destination is None:
+        raise RuntimeError(f"File Copying: Invalid symlinking file paths passed in [origin={origin}, destination={destination}]")
+
     # Fast return if there is no need for the operation
     if is_copied(origin, destination):
         return
+
+    # Fast fail if the file already exists
+    if os.path.isfile(destination) or os.path.islink(destination):
+        raise RuntimeError(f"File Copying: Destination file already exists [origin={origin}, destination={destination}]")
 
     if use_sudo:
         command = f"cp {origin} {destination}"
@@ -79,9 +103,17 @@ def copy_file(origin, destination, use_sudo=False, sudo_password=""):
 
 
 def symlink_file(origin, destination, use_sudo=False, sudo_password=""):
+    # Fast fail if invalid origin/destinations passed in
+    if origin is None or destination is None:
+        raise RuntimeError(f"File Symlinking: Invalid symlinking file paths passed in [origin={origin}, destination={destination}]")
+
     # Fast return if there is no need for the operation
     if is_linked(origin, destination):
         return
+
+    # Fast fail if the file already exists
+    if os.path.isfile(destination) or os.path.islink(destination):
+        raise RuntimeError(f"File Symlinking: Destination file already exists [origin={origin}, destination={destination}]")
 
     if use_sudo:
         command = f"ln -s {origin} {destination}"
@@ -102,20 +134,20 @@ def symlink_file(origin, destination, use_sudo=False, sudo_password=""):
         os.symlink(origin, destination)
 
 
-def unsymlink_file(origin, destination, use_sudo=False, sudo_password=""):
-    # Fast return if there is no need for the operation
-    if not is_linked(origin, destination):
-        return
+def unsymlink_file(file, use_sudo=False, sudo_password=""):
+    # Fast fail if invalid file name or type passed in
+    if file is None or not os.path.islink(file):
+        raise RuntimeError(f"File Unsymlinking: File does not exist or is a symlink [file={file}]")
 
     if use_sudo:
-        command = f"unlink {destination}"
+        command = f"unlink {file}"
         process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
             stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
 
             if "File exists" in stderr:
-                raise FileExistsError(f"The file {destination} already exists")
+                raise FileExistsError(f"The file {file} already exists")
 
             if process.returncode != 0:
                 raise RuntimeError(stderr)
@@ -123,17 +155,13 @@ def unsymlink_file(origin, destination, use_sudo=False, sudo_password=""):
             process.kill()
             raise
     else:
-        os.unlink(destination)
+        os.unlink(file)
 
 
 def run_file(file, use_sudo=False, sudo_password=""):
-    # Fast return if there is no file
-    if file is None:
-        return
-
-    # Fast fail if the file can't be executed
-    if not is_executable(file):
-        raise RuntimeError(f"File Execution: File does not have execution permissions [file={file}]")
+    # Fast fail if there is no file or the file can't be executed
+    if file is None or not is_executable(file):
+        raise RuntimeError(f"File Execution: File does not exist or have execution permissions [file={file}]")
 
     if use_sudo:
         command = f"{file}"
@@ -159,6 +187,17 @@ Utility functions
 """
 
 
+def is_moved(origin, destination):
+    # Enables fast-failing based on existence
+    if not os.path.isfile(destination):
+        return False
+
+    if os.path.isfile(origin):
+        return False
+
+    return True
+
+
 def is_broken_link(file):
     return os.path.islink(file) and not os.path.exists(file)
 
@@ -168,6 +207,10 @@ def is_linked(origin, destination):
 
 
 def is_copied(origin, destination):
+    # Enables fast-failing based on type
+    if os.path.islink(destination):
+        return False
+
     # Enables fast-failing based on existence
     if not os.path.isfile(destination):
         return False

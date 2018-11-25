@@ -66,7 +66,7 @@ setup(
             # Tests
             'pyest',
             'pytest-pep8',
-            'pytest-cov'
+            'pytest-cov',
         ],
         'release': [
             'wheel',

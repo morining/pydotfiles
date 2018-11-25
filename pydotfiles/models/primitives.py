@@ -68,18 +68,30 @@ class FileAction:
         logger.debug(f"File Action: Successful action [action={self.action}, origin={self.origin}, destination={self.destination}, use_sudo={self.run_as_sudo}]")
 
     def undo(self):
-        logger.debug(f"File Action: Starting action [action={self.reverse_action}, file={self.destination}, use_sudo={self.run_as_sudo}]")
+        logger.debug(f"File Action: Starting undo action [action={self.reverse_action}, file={self.destination}, use_sudo={self.run_as_sudo}]")
+
+        if self.destination is None:
+            logger.info(f"File Action: No reverse action required [action={self.reverse_action}], file={self.destination}, use_sudo={self.run_as_sudo}")
+            return
 
         if self.action == FileActionType.COPY:
+            if not os.path.isfile(self.destination):
+                logger.info(f"File Action: No reverse action required [action={self.reverse_action}], file={self.destination}, use_sudo={self.run_as_sudo}")
+                return
+
             rm_file(self.destination, self.run_as_sudo, self.sudo_password)
         elif self.action == FileActionType.SYMLINK:
-            unsymlink_file(self.origin, self.destination, self.run_as_sudo, self.sudo_password)
+            if not os.path.islink(self.destination):
+                logger.info(f"File Action: No reverse action required [action={self.reverse_action}], file={self.destination}, use_sudo={self.run_as_sudo}")
+                return
+
+            unsymlink_file(self.destination, self.run_as_sudo, self.sudo_password)
         elif self.action == FileActionType.SCRIPT:
             run_file(self.destination, self.run_as_sudo, self.sudo_password)
         else:
             raise NotImplementedError(f"File Action: The undo action `{self.action}` is not supported yet (feel free to open a ticket on github!)")
 
-        logger.debug(f"File Action: Successful action [action={self.reverse_action}, file={self.destination}, use_sudo={self.run_as_sudo}]")
+        logger.debug(f"File Action: Successful undo action [action={self.reverse_action}, file={self.destination}, use_sudo={self.run_as_sudo}]")
 
     def overwrite(self):
         # Just deletes the destination and then re-runs the operation

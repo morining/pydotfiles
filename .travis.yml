@@ -27,6 +27,8 @@ before_script:
 script:
   # Runs through the test suite
   - bin/lint
+  - pip install -e .
+  - pytest --pep8 --cov=pydotfiles tests/ --cov-fail-under=10
 
 after_success:
   - bin/generate-release
@@ -37,6 +39,7 @@ deploy:
   user: "JasonYao"
   password:
     secure: 0g/tLWbYAb9JrqKds8qqFuYk55o9su4aSr27iKXEDVaCsiFWLKcanB3tgCE/TkM/M6+2CCJXWcxRqpwoUkGgkBKOus1nNDYymEo7TTpmGWMx93oJAU6XU1YK+z46EX8QbkmVIAA33qe7NeB9liDfXE0m1Od7t58kqbIjXxla37DRIxpdEQR/r8yhu8y6AydbxS5rL0qDASb3LunB/sJvfaPRfyPYG0tf/IYazGDFR+v2BPpSXYLOtToGop+3UtChH71K4v8F8K9xoVLGab856DbolUXgNN4jn8HdzRwShgLqNpoWY8lPLc6rY6ANf217zWvGJCcEudyCYAGasFFG22V4Almqsca5ltHDFH6nBqDlVtRhaNkeyU+6gh7jTW2h0HPOwQivh/oPz334RNft7RIoI+ydgWVtfoU9UmqNBmtxDCII+mWKRcBND68mXppCOIiBYbPJQmb9bT7k5oLvAnGqd9zuH30ZhGqHkxTPAmd7tZx791v46yT0bAXeS7jS7Tpg1k+TS/wfo6nrVz7+t1EI5HOkD9ptZiWGVORD+V7JPO53efazaVvG6H3U82QPTWVNg9SNaFdEUvUWBzPQlXKVvC5tio6hQc+obUYnxudXZJb7Sp5yVGouJzwskFn/3T9gxTMn6vtQZ8rc4gdqpyNBi65oudT5cIL9CVQ81I0=
+  # We want both source code and binary releases
   distributions: "sdist bdist_wheel"
 
   # We want to use the existing build
