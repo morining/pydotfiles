@@ -1,0 +1,10 @@
+{
+    "version": "alpha",
+    "actions": [
+        {
+            "files": {
+                "source.json": "destination.json"
+            }
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+{
+    "version": "alpha",
+    "actions": [
+        {
+            "action": "symlink"
+        }
+    ]
+}

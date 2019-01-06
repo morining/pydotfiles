@@ -139,3 +139,25 @@ class PydotfilesErrorReason(Enum):
             PydotfilesErrorReason.UNKNOWN_ERROR: None
         }
         return help_message_map.get(reason)
+
+
+class ValidationErrorReason(Enum):
+    """
+    Represents a particular reason why
+    the validation of a given dotfiles,
+    module, or file failed
+    """
+
+    INVALID_TARGET = auto()
+
+    INVALID_EMPTY_FILE = auto()
+    INVALID_SYNTAX = auto()
+    INVALID_SCHEMA = auto()
+
+    @staticmethod
+    def get_help_message(reason):
+        help_message_map = {
+            ValidationErrorReason.INVALID_EMPTY_FILE: "An empty invalid configuration file was detected",
+            ValidationErrorReason.INVALID_SCHEMA: "A given configuration file contains an invalid schema"
+        }
+        return help_message_map.get(reason)

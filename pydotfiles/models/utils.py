@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import getpass
 import sys
+import json
+import yaml
 
 # Project imports
 from pydotfiles.models import OverrideAction
@@ -53,6 +55,26 @@ def uninstall_homebrew():
         #     process.kill()
         #     PrettyPrint.fail(f"Package Manager: Failed to install homebrew")
         #     raise
+
+
+def load_data_from_file(config_file):
+    """
+    Loads a module's settings configuration
+    file
+    """
+    if config_file is None:
+        return {}
+
+    with open(config_file, 'r') as config_fd:
+        if config_file.endswith("json"):
+            return json.load(config_fd)
+        elif config_file.endswith("yaml") or config_file.endswith("yml"):
+            try:
+                return yaml.load(config_fd)
+            except yaml.YAMLError:
+                raise
+        else:
+            raise RuntimeError(f"Configuration Data Load: The file type of the settings configuration file {config_file} could not be parsed (not a supported filetype)")
 
 
 """

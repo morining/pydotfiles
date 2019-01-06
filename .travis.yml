@@ -28,7 +28,7 @@ script:
   # Runs through the test suite
   - bin/lint
   - pip install -e .
-  - pytest --pep8 --cov=pydotfiles tests/ --cov-fail-under=10
+  - pytest --pep8 --cov=pydotfiles tests/ --cov-fail-under=30
 
 after_success:
   - bin/generate-release

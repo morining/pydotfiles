@@ -21,8 +21,9 @@ from .enums import FileActionType, OS, PackageManager, OverrideAction
 from .constants import *
 from .primitives import FileAction, CacheDirectory, EnvironmentManager
 from .exceptions import PydotfilesError, PydotfilesErrorReason
+from .validator import Validator
 
-from .utils import install_homebrew, uninstall_homebrew
+from .utils import install_homebrew, uninstall_homebrew, load_data_from_file
 from .utils import get_user_override, ask_sudo_password
 from pydotfiles.utils import remove_prefix
 from .utils import set_logging
@@ -190,7 +191,7 @@ class Module:
 
         # Loads in the settings file
         self.settings_file = settings_file
-        settings_data = load_config_data(self.settings_file)
+        settings_data = load_data_from_file(self.settings_file)
         self.operating_system = parse_operating_system_config(settings_data.get('os'), self.cache_directory)
         self.environments = parse_environment_configs(settings_data.get('environments'), self.cache_directory)
         self.actions, self.is_sudo_used = parse_action_configs(settings_data.get('actions'), self.directory, self.symlinks, self.other_files)
@@ -637,26 +638,6 @@ def load_config_repo_remote(config_repo_local):
 """
 Parsing: Module-level configs
 """
-
-
-def load_config_data(config_file):
-    """
-    Loads a module's settings configuration
-    file
-    """
-    if config_file is None:
-        return {}
-
-    with open(config_file, 'r') as config_fd:
-        if config_file.endswith("json"):
-            return json.load(config_fd)
-        elif config_file.endswith("yaml") or config_file.endswith("yml"):
-            try:
-                return yaml.load(config_fd)
-            except yaml.YAMLError:
-                raise
-        else:
-            raise RuntimeError(f"Configuration Data Load: The file type of the settings configuration file {config_file} could not be parsed (not a supported filetype)")
 
 
 def parse_environment_configs(environments, cache_directory):

@@ -1,0 +1,8 @@
+{
+    "version": "alpha",
+    "environments": [
+        {
+            "language": "not one of python, ruby, golang, or java"
+        }
+    ]
+}

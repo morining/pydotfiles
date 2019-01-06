@@ -51,6 +51,7 @@ setup(
     # Installation dependencies below
     install_requires=[
         'PyYAML>=3.13',
+        'jsonschema>=2.6.0',
         'GitPython>=2.1.11',
         'progressbar2>=3.38.0'
     ],

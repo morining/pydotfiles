@@ -5,7 +5,7 @@ import os
 
 # Project imports
 from pydotfiles.models import PYDOTFILES_CACHE_DIRECTORY, DEFAULT_PYDOTFILES_CONFIG_LOCAL_DIRECTORY, DEFAULT_CONFIG_REMOTE_REPO
-from pydotfiles.models import Dotfiles, CacheDirectory
+from pydotfiles.models import Dotfiles, CacheDirectory, Validator
 from pydotfiles.models import get_pydotfiles_config_data_with_override, load_pydotfiles_config_data, write_pydotfiles_config_data
 from pydotfiles.models import PydotfilesError
 from pydotfiles.utils import PrettyPrint
@@ -24,7 +24,16 @@ class ArgumentDispatcher:
         self.api_arguments = api_arguments
 
     def dispatch(self):
-        valid_commands = ['download', 'install', 'uninstall', 'update', 'clean', 'set']
+        valid_commands = [
+            'download',
+            'install',
+            'uninstall',
+            'update',
+            'clean',
+            'set',
+            'validate',
+        ]
+
         parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description="""
         Python Dotfiles Manager, enabling configuration-based management of your system!
 
@@ -35,6 +44,7 @@ class ArgumentDispatcher:
           - update: Updates all/part of your dotfiles
           - clean: Removes the pydotfiles cache/default
           - set: Sets configuration values for managing your dotfiles
+          - validate: Validates that a given directory is pydotfiles-compliant
         """)
         parser.add_argument('--version', action='version', version='%(prog)s ' + pydotfiles.__version__)
         parser.add_argument("command", help="Runs the command given", choices=valid_commands)
@@ -180,6 +190,22 @@ class ArgumentDispatcher:
 
         write_pydotfiles_config_data(cache_directory, config_repo_local, config_repo_remote)
         PrettyPrint.success(f"Set: Successfully persisted configuration data [local-directory={config_repo_local}, remote-repo={config_repo_remote}]")
+
+    def validate(self, command_arguments):
+        help_description = """
+        Validates a given directory and whether it's pydotfiles-compliant.
+        (default: Checks the current working directory)
+        """
+        parser = self.__get_base_parser(help_description, "validate")
+        parser.add_argument("-d", "--directory", help="Validates the passed in directory", default=os.getcwd())
+
+        args = parser.parse_args(command_arguments)
+
+        validator = Validator(args.quiet, args.verbose)
+        try:
+            validator.validate_directory(args.directory)
+        except PydotfilesError as e:
+            PrettyPrint.fail(e.help_message)
 
     @staticmethod
     def __get_base_parser(description, sub_command):

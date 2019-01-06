@@ -1,0 +1,126 @@
+{
+    "type": "object",
+    "properties": {
+        "version": {
+            "enum": ["alpha"]
+        },
+        "os": {
+            "$ref": "#/definitions/OperatingSystemType"
+        },
+        "actions": {
+            "$ref": "#/definitions/ActionsType"
+        },
+        "environments": {
+            "$ref": "#/definitions/EnvironmentsType"
+        }
+    },
+    "required": ["version"],
+    "definitions": {
+        "OperatingSystemType": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "enum": ["macos", "linux"]
+                },
+                "shell": {
+                    "enum": ["bash", "zsh"]
+                },
+                "packages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "default_dock": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": ["name"]
+        },
+        "ActionsType": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/ActionType"
+            }
+        },
+        "ActionType": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "enum": [
+                        "copy",
+                        "symlink",
+                        "script"
+                    ]
+                },
+                "files": {
+                    "type": "object",
+                    "properties": {
+                        "terms": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "hidden": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "sudo": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "absolute": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "required": ["action", "files"]
+
+        },
+        "EnvironmentsType": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/EnvironmentType"
+            }
+        },
+        "EnvironmentType": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "enum": ["python", "ruby", "java"]
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "environment_manager": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "plugins": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "required": ["name"]
+                }
+            },
+            "required": ["language", "versions"]
+        }
+    }
+}
