@@ -61,6 +61,9 @@ class ArgumentDispatcher:
         help_description = f"""
         Downloads the dotfiles config repo if it hasn't been cloned to local.
 
+        If a remote repo is not provided pydotfiles will use the basic set of pydotfiles
+        found at https://github.com/JasonYao/pydotfiles-basic.
+
         Pydotfiles's configuration is setup in a fallthrough manner:
             - Command-line arguments passed in override all other configs, and will be persisted in $HOME/.pydotfiles/config.json
             - Any non-overridden arguments is then configured from: $HOME/.pydotfiles/config.json (if it exists)
