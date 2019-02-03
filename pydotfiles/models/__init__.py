@@ -23,6 +23,7 @@ from .validator import Validator
 
 from .utils import install_homebrew, uninstall_homebrew, load_data_from_file
 from .utils import get_user_override, ask_sudo_password
+from .dock import DockManager
 from pydotfiles.utils import remove_prefix
 from pydotfiles.defaults import get_current_mac_version
 from .utils import set_logging
@@ -214,6 +215,7 @@ class Module:
             self.operating_system.install_packages()
             self.operating_system.install_applications()
             self.operating_system.install_settings()
+            self.operating_system.install_default_dock()
 
         for environment in self.environments:
             environment.install()
@@ -356,18 +358,20 @@ class OperatingSystem:
     operating system
     """
 
-    def __init__(self, name, shell, packages, applications, cache_directory, settings):
+    def __init__(self, name, shell, packages, applications, cache_directory, default_dock, settings, dock_manager):
         self.name = OS.from_string(name)
         self.shell = shell
         self.package_manager = OS.get_package_manager(self.name)
         self.packages = packages
         self.applications = applications
         self.cache_directory = cache_directory
+        self.default_dock = default_dock
         self.settings = settings
+        self.dock_manager = dock_manager
         self.sudo_password = None
 
     def install_package_manager(self):
-        if self.name == "macos":
+        if self.name == OS.MACOS:
             install_homebrew()
         else:
             logger.warning(f"Package Manager: Support for package manager is not implemented yet [action=install, package manager={self.package_manager}]")
@@ -380,6 +384,38 @@ class OperatingSystem:
         for application in self.applications:
             self.install_application(application)
 
+    def install_default_dock(self):
+        if self.name != OS.MACOS:
+            logger.info("Default Dock: Setting the dock is currently only supported on macOS- feel free to leave a github issue at https://github.com/JasonYao/pydotfiles/issues/new to request this feature!")
+            return
+
+        if self.default_dock is None:
+            logger.info("Default Dock: No default dock specified, skipping dock setting")
+            return
+
+        current_dock_applications = self.dock_manager.get_current_dock_applications()
+
+        # Note: The ^ gives the disjunctive union (symmetric difference) of two sets
+        symmetric_difference_in_dock_applications = self.default_dock ^ current_dock_applications
+
+        if len(symmetric_difference_in_dock_applications) == 0:
+            logger.info("Default Dock: All default dock applications already set")
+            return
+
+        logger.info(f"Default Dock: Found persistent apps on the dock that did not belong or missing default apps, resetting now [default_apps_difference={symmetric_difference_in_dock_applications}]")
+
+        # In this scenario, we found persistent apps on the dock that
+        # don't belong there, or missing default apps, so we'll delete
+        # the existing dock config, add in our new one, and then restart
+        # everything
+        DockManager.delete_dock_plist_file()
+
+        for default_dock_application in self.default_dock:
+            DockManager.add_application_to_default_on_dock(default_dock_application)
+
+        DockManager.restart_dock()
+        logger.info(f"Default Dock: Successfully set the dock to have the default applications [default_applications={self.default_dock}]")
+
     def install_settings(self):
         current_mac_version = get_current_mac_version()
         for setting in self.settings:
@@ -390,7 +426,7 @@ class OperatingSystem:
                 logger.info(f"Setting: Default setting already set [default_setting={setting.name}, description={setting.description}]")
 
     def uninstall_package_manager(self):
-        if self.name == "macos":
+        if self.name == OS.MACOS:
             uninstall_homebrew()
         else:
             logger.warning(f"Package Manager: Support for package manager is not implemented yet [action=uninstall, package manager={self.package_manager}]")
@@ -695,6 +731,9 @@ def parse_operating_system_config(os_config, cache_directory, directory):
         packages = os_config.get('packages')
         applications = os_config.get('applications')
 
+        raw_default_dock = os_config.get('default_dock')
+        default_dock_applications = None if raw_default_dock is None else set(raw_default_dock)
+
         default_settings_file_name = os_config.get('default_settings_file')
 
         default_settings = None
@@ -708,7 +747,9 @@ def parse_operating_system_config(os_config, cache_directory, directory):
             packages=packages,
             applications=applications,
             cache_directory=cache_directory,
-            settings=default_settings
+            default_dock=default_dock_applications,
+            settings=default_settings,
+            dock_manager=DockManager(),
         )
 
 

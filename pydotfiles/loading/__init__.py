@@ -1,3 +1,5 @@
+import plistlib
+
 from pydotfiles.models.utils import load_data_from_file
 from pydotfiles.defaults import MacVersion, VersionRange, Setting
 
@@ -8,6 +10,16 @@ def get_os_default_settings(default_setting_file_path):
 
     # Parses the default settings data
     return parse_default_settings(default_settings_data)
+
+
+"""
+Loading methods
+"""
+
+
+def load_plist(plist_path):
+    with open(plist_path, 'rb') as plist_file:
+        return plistlib.load(plist_file)
 
 
 """
