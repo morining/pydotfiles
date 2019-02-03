@@ -42,6 +42,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "default_settings_file": {
+                    "type": "string"
                 }
             },
             "required": ["name"]

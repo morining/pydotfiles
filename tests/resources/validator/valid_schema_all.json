@@ -53,7 +53,8 @@
             "Notes",
             "iTunes",
             "appstore"
-        ]
+        ],
+        "default_settings_file": "default-settings.json"
     },
     "environments": [
         {

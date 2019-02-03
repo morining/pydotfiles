@@ -182,6 +182,32 @@ def run_file(file, use_sudo=False, sudo_password=""):
             raise RuntimeError(command_result.stderr.decode())
 
 
+def run_command(command, use_sudo=False, sudo_password=""):
+    # Fast fail if invalid command is passed in
+    if command is None:
+        raise RuntimeError(f"Command Execution: Invalid command passed in [command={command}]")
+
+    if use_sudo:
+        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+        try:
+            stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
+
+            if process.returncode != 0:
+                raise RuntimeError(stderr)
+
+            return stdout.strip()
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise
+    else:
+        try:
+            output = subprocess.run(command, check=True, encoding='utf-8', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return output.stdout.strip()
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError from e
+
+
 """
 Utility functions
 """

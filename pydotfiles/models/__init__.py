@@ -1,6 +1,5 @@
 # General imports
 import configparser
-import json
 import shutil
 import os
 import subprocess
@@ -11,7 +10,6 @@ from distutils.version import StrictVersion
 import logging
 
 # Vendor imports
-import yaml
 from git import Repo
 from git.remote import RemoteProgress
 from progressbar import ProgressBar
@@ -26,7 +24,9 @@ from .validator import Validator
 from .utils import install_homebrew, uninstall_homebrew, load_data_from_file
 from .utils import get_user_override, ask_sudo_password
 from pydotfiles.utils import remove_prefix
+from pydotfiles.defaults import get_current_mac_version
 from .utils import set_logging
+from pydotfiles.loading import get_os_default_settings
 
 
 logger = logging.getLogger(__name__)
@@ -192,7 +192,7 @@ class Module:
         # Loads in the settings file
         self.settings_file = settings_file
         settings_data = load_data_from_file(self.settings_file)
-        self.operating_system = parse_operating_system_config(settings_data.get('os'), self.cache_directory)
+        self.operating_system = parse_operating_system_config(settings_data.get('os'), self.cache_directory, self.directory)
         self.environments = parse_environment_configs(settings_data.get('environments'), self.cache_directory)
         self.actions, self.is_sudo_used = parse_action_configs(settings_data.get('actions'), self.directory, self.symlinks, self.other_files)
         self.sudo_password = None
@@ -213,6 +213,7 @@ class Module:
         if self.operating_system is not None:
             self.operating_system.install_packages()
             self.operating_system.install_applications()
+            self.operating_system.install_settings()
 
         for environment in self.environments:
             environment.install()
@@ -355,13 +356,14 @@ class OperatingSystem:
     operating system
     """
 
-    def __init__(self, name, shell, packages, applications, cache_directory):
+    def __init__(self, name, shell, packages, applications, cache_directory, settings):
         self.name = OS.from_string(name)
         self.shell = shell
         self.package_manager = OS.get_package_manager(self.name)
         self.packages = packages
         self.applications = applications
         self.cache_directory = cache_directory
+        self.settings = settings
         self.sudo_password = None
 
     def install_package_manager(self):
@@ -377,6 +379,15 @@ class OperatingSystem:
     def install_applications(self):
         for application in self.applications:
             self.install_application(application)
+
+    def install_settings(self):
+        current_mac_version = get_current_mac_version()
+        for setting in self.settings:
+            if setting.should_run(current_mac_version, self.sudo_password):
+                logger.info(f"Setting: Default setting not set, setting now [default_setting={setting.name}, description={setting.description}]")
+                setting.run(self.sudo_password)
+            else:
+                logger.info(f"Setting: Default setting already set [default_setting={setting.name}, description={setting.description}]")
 
     def uninstall_package_manager(self):
         if self.name == "macos":
@@ -396,7 +407,7 @@ class OperatingSystem:
     Helper methods
     """
 
-    def install_package(self, package_with_args, sudo_password=""):
+    def install_package(self, package_with_args):
         package = package_with_args.split()[0]
 
         if self.cache_directory.is_package_installed(package):
@@ -442,7 +453,7 @@ class OperatingSystem:
 
             process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
             try:
-                process.communicate(sudo_password + '\n')
+                process.communicate(self.sudo_password + '\n')
             except TimeoutExpired:
                 process.kill()
                 logger.exception(f"Package: Installation failed [Package={package}]")
@@ -454,7 +465,7 @@ class OperatingSystem:
         else:
             raise NotImplementedError(f"Package: Install is currently not supported [PackageManager={self.package_manager}]")
 
-    def install_application(self, application, sudo_password=""):
+    def install_application(self, application):
         if self.cache_directory.is_application_installed(application):
             logger.info(f"Application: Already installed [Application={application}]")
             return
@@ -493,7 +504,7 @@ class OperatingSystem:
 
             process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
             try:
-                process.communicate(sudo_password + '\n')
+                process.communicate(self.sudo_password + '\n')
             except TimeoutExpired:
                 process.kill()
                 logger.exception(f"Package: Installation failed [Application={application}]")
@@ -504,7 +515,7 @@ class OperatingSystem:
         else:
             raise NotImplementedError(f"Application: Install is currently not supported [Package Manager={self.package_manager}]")
 
-    def uninstall_package(self, package, sudo_password=""):
+    def uninstall_package(self, package):
         logger.info(f"Package: Starting uninstall [Package={package}]")
 
         if self.package_manager == PackageManager.BREW:
@@ -520,7 +531,7 @@ class OperatingSystem:
 
             process = Popen(['sudo', '-S'] + command.split(), stdin=PIPE, stderr=PIPE, universal_newlines=True)
             try:
-                process.communicate(sudo_password + '\n')
+                process.communicate(self.sudo_password + '\n')
             except TimeoutExpired:
                 process.kill()
                 logger.exception(f"Package: Failed to uninstall [Package={package}]")
@@ -530,7 +541,7 @@ class OperatingSystem:
 
         logger.info(f"Package: Successfully uninstalled [Package={package}]")
 
-    def uninstall_application(self, application, sudo_password=""):
+    def uninstall_application(self, application):
         logger.info(f"Application: Starting uninstall [Application={application}]")
 
         if self.package_manager == PackageManager.BREW:
@@ -543,7 +554,7 @@ class OperatingSystem:
 
             logger.info(f"Application: Successfully uninstalled [Application={application}]")
         else:
-            self.uninstall_package(application, sudo_password)
+            self.uninstall_package(application)
 
 
 """
@@ -671,7 +682,7 @@ def parse_environment(environment, cache_directory):
     return DevelopmentEnvironment(language, versions, environment_manager, cache_directory)
 
 
-def parse_operating_system_config(os_config, cache_directory):
+def parse_operating_system_config(os_config, cache_directory, directory):
     """
     Deserializes a single OS dictionary
     to an OS object
@@ -683,7 +694,22 @@ def parse_operating_system_config(os_config, cache_directory):
         shell = os_config.get('shell')
         packages = os_config.get('packages')
         applications = os_config.get('applications')
-        return OperatingSystem(name, shell, packages, applications, cache_directory)
+
+        default_settings_file_name = os_config.get('default_settings_file')
+
+        default_settings = None
+        if default_settings_file_name is not None:
+            default_settings_file_path = os.path.join(directory, default_settings_file_name)
+            default_settings = get_os_default_settings(default_settings_file_path)
+
+        return OperatingSystem(
+            name=name,
+            shell=shell,
+            packages=packages,
+            applications=applications,
+            cache_directory=cache_directory,
+            settings=default_settings
+        )
 
 
 def parse_action_configs(action_configs, directory, symlinks, other_files):

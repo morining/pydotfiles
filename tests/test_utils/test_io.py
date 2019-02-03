@@ -2,7 +2,7 @@ import os
 import filecmp
 import pytest
 
-from pydotfiles.utils import mv_file, rm_file, copy_file, symlink_file, unsymlink_file, run_file
+from pydotfiles.utils import mv_file, rm_file, copy_file, symlink_file, unsymlink_file, run_file, run_command
 from pydotfiles.utils import is_moved, is_broken_link, is_linked, is_copied, is_executable
 
 
@@ -214,6 +214,35 @@ def test_run_file_fail_no_execution_bit_set(tmpdir):
     with pytest.raises(RuntimeError):
         # System under test
         run_file(some_script_file)
+
+
+"""
+Run command tests
+"""
+
+
+def test_run_command_success(tmpdir):
+    # Setup
+    some_file = tmpdir.join("test.txt")
+    some_file.write("testing")
+
+    # Setup
+    output = run_command("ls " + tmpdir.realpath().__str__())
+
+    # Verification
+    assert output == "test.txt"
+
+
+def test_run_command_fail_none():
+    with pytest.raises(RuntimeError):
+        # System under test
+        run_command(None)
+
+
+def test_run_command_fail_executable_not_found_in_path():
+    with pytest.raises(RuntimeError):
+        # System under test
+        run_command("commandabc")
 
 
 """
