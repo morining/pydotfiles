@@ -10,6 +10,9 @@ set -e
 # Linting/testing dependencies (should have been in dev but it doesn't work)
 pip3 install autopep8 pytest pytest-pep8 pytest-cov
 
+# Stupid travis having out of date libraries
+pip3 install --upgrade pytest
+
 # Automatic semantic release plugin
 npm install -g semantic-release               \
     @semantic-release/changelog               \
