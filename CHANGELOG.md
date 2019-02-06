@@ -1,5 +1,12 @@
 # Changelog | Pydotfiles
 
+# [1.2.0](https://github.com/JasonYao/pydotfiles/compare/v1.1.0...v1.2.0) (2019-02-06)
+
+
+### Features
+
+* **downloads:** Enables downloading a default set of basic dotfiles if one is not provided ([c0c8651](https://github.com/JasonYao/pydotfiles/commit/c0c8651)), closes [#17](https://github.com/JasonYao/pydotfiles/issues/17)
+
 # [1.1.0](https://github.com/JasonYao/pydotfiles/compare/v1.0.0...v1.1.0) (2019-02-06)
 
 
