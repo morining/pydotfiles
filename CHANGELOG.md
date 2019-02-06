@@ -1,5 +1,12 @@
 # Changelog | Pydotfiles
 
+# [1.1.0](https://github.com/JasonYao/pydotfiles/compare/v1.0.0...v1.1.0) (2019-02-06)
+
+
+### Features
+
+* **defaults:** Adds in the ability to set default settings for a given OS ([ba7aebd](https://github.com/JasonYao/pydotfiles/commit/ba7aebd)), closes [#46](https://github.com/JasonYao/pydotfiles/issues/46)
+
 # [1.0.0](https://github.com/JasonYao/pydotfiles/compare/v0.1.0...v1.0.0) (2019-02-06)
 
 
