@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class Setting:
 
-    def __init__(self, name, valid_version_range, command, enabled=True, description=None, check_command=None, expected_check_state=None, run_as_sudo=False):
+    def __init__(self, name, valid_version_range, command, enabled=True, description=None, check_command=None, expected_check_state=None, run_as_sudo=False, check_output=True):
         self.name = name
         self.enabled = enabled
         self.description = description
@@ -19,6 +19,7 @@ class Setting:
         self.check_command = check_command
         self.expected_check_state = expected_check_state
         self.run_as_sudo = run_as_sudo
+        self.check_output = check_output
 
     def __str__(self):
         return f"Setting(name={self.name}, enabled={self.enabled}, description={self.description}, valid_version_range={self.valid_version_range}, command={self.command}, check_command={self.check_command}, expected_check_state={self.expected_check_state})"
@@ -33,15 +34,15 @@ class Setting:
         if self.check_command is None:
             return True
 
-        current_status_check_result = run_command(self.check_command, self.run_as_sudo, sudo_password)
+        current_status_check_result = run_command(self.check_command, self.run_as_sudo, sudo_password, check_output=self.check_output)
 
         if current_status_check_result != self.expected_check_state:
-            logger.info(f"Setting: Expected value not found, running command now [action={self.name}, expected={self.expected_check_state.encode('unicode_escape')}, found={current_status_check_result.encode('unicode_escape')}")
+            logger.info(f"Setting: Expected value not found, running command now [action={self.name}, expected={self.expected_check_state.encode('unicode_escape')}, found={current_status_check_result.encode('unicode_escape')}, run_as_sudo={self.run_as_sudo}")
 
         return current_status_check_result != self.expected_check_state
 
     def run(self, sudo_password):
-        run_command(self.command, self.run_as_sudo, sudo_password)
+        run_command(self.command, self.run_as_sudo, sudo_password, check_output=self.check_output)
 
 
 class VersionRange:

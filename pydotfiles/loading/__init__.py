@@ -34,7 +34,9 @@ def parse_default_settings(default_settings_data):
         check_command = raw_setting.get("check_command")
         expected_check_state = raw_setting.get("expected_check_state")
 
-        run_as_sudo = raw_setting.get("run_as_sudo", False)
+        run_as_sudo = raw_setting.get("sudo", False)
+
+        check_output = raw_setting.get("check_output", True)
         settings.append(Setting(
             name=name,
             valid_version_range=valid_version_range,
@@ -43,7 +45,8 @@ def parse_default_settings(default_settings_data):
             description=description,
             check_command=check_command,
             expected_check_state=expected_check_state,
-            run_as_sudo=run_as_sudo
+            run_as_sudo=run_as_sudo,
+            check_output=check_output,
         ))
 
     return settings
