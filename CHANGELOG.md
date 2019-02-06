@@ -1,5 +1,20 @@
 # Changelog | Pydotfiles
 
+# [2.0.0](https://github.com/JasonYao/pydotfiles/compare/v1.2.0...v2.0.0) (2019-02-06)
+
+
+### Bug Fixes
+
+* **default-settings:** Fixes sudo command execution and grants the ability to ignore return code val ([f672b6f](https://github.com/JasonYao/pydotfiles/commit/f672b6f))
+
+
+### BREAKING CHANGES
+
+* **default-settings:** 'run_as_sudo' should instead be called 'sudo'. If you want to ignore return code
+errors, please use ''check_output': false'
+
+Fixes 54
+
 # [1.2.0](https://github.com/JasonYao/pydotfiles/compare/v1.1.0...v1.2.0) (2019-02-06)
 
 
