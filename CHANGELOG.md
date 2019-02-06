@@ -1,5 +1,12 @@
 # Changelog | Pydotfiles
 
+# [2.1.0](https://github.com/JasonYao/pydotfiles/compare/v2.0.0...v2.1.0) (2019-02-06)
+
+
+### Features
+
+* **dock:** Adds in the ability to set the dock icons via config ([b55d99a](https://github.com/JasonYao/pydotfiles/commit/b55d99a)), closes [#52](https://github.com/JasonYao/pydotfiles/issues/52)
+
 # [2.0.0](https://github.com/JasonYao/pydotfiles/compare/v1.2.0...v2.0.0) (2019-02-06)
 
 
