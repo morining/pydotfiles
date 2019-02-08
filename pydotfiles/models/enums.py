@@ -154,6 +154,11 @@ class ValidationErrorReason(Enum):
     INVALID_SYNTAX = auto()
     INVALID_SCHEMA = auto()
 
+    # Specific schema issues
+    INVALID_DATA = auto()
+    INVALID_SCHEMA_VERSION = auto()
+    INVALID_SCHEMA_TYPE = auto()
+
     @staticmethod
     def get_help_message(reason):
         help_message_map = {

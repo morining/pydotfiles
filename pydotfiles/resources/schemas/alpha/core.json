@@ -4,6 +4,9 @@
         "version": {
             "enum": ["alpha"]
         },
+        "schema": {
+            "enum": ["core", "default_settings"]
+        },
         "os": {
             "$ref": "#/definitions/OperatingSystemType"
         },
@@ -14,7 +17,7 @@
             "$ref": "#/definitions/EnvironmentsType"
         }
     },
-    "required": ["version"],
+    "required": ["version", "schema"],
     "definitions": {
         "OperatingSystemType": {
             "type": "object",

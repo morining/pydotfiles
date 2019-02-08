@@ -18,7 +18,7 @@ from progressbar import ProgressBar
 from .enums import FileActionType, OS, PackageManager, OverrideAction
 from .constants import *
 from .primitives import FileAction, CacheDirectory, EnvironmentManager
-from .exceptions import PydotfilesError, PydotfilesErrorReason
+from .exceptions import PydotfilesError, PydotfilesErrorReason, ValidationError
 from .validator import Validator
 
 from .utils import install_homebrew, uninstall_homebrew, load_data_from_file

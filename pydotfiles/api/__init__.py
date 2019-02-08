@@ -7,7 +7,7 @@ import os
 from pydotfiles.models import PYDOTFILES_CACHE_DIRECTORY, DEFAULT_PYDOTFILES_CONFIG_LOCAL_DIRECTORY, DEFAULT_CONFIG_REMOTE_REPO
 from pydotfiles.models import Dotfiles, CacheDirectory, Validator
 from pydotfiles.models import get_pydotfiles_config_data_with_override, load_pydotfiles_config_data, write_pydotfiles_config_data
-from pydotfiles.models import PydotfilesError
+from pydotfiles.models import PydotfilesError, ValidationError
 from pydotfiles.utils import PrettyPrint
 
 
@@ -207,7 +207,7 @@ class ArgumentDispatcher:
         validator = Validator(args.quiet, args.verbose)
         try:
             validator.validate_directory(args.directory)
-        except PydotfilesError as e:
+        except ValidationError as e:
             PrettyPrint.fail(e.help_message)
 
     @staticmethod

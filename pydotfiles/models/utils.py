@@ -6,6 +6,7 @@ import getpass
 import sys
 import json
 import yaml
+from pathlib import Path
 
 # Project imports
 from pydotfiles.models import OverrideAction
@@ -59,11 +60,16 @@ def uninstall_homebrew():
 
 def load_data_from_file(config_file):
     """
-    Loads a module's settings configuration
-    file
+    Loads a configuration file
     """
     if config_file is None:
         return {}
+
+    # TODO P3: We're doing this path -> string convert here to not break
+    # current APIs, but we'll want to come back and re-write everything in
+    # terms of Path later on
+    if isinstance(config_file, Path):
+        config_file = str(config_file)
 
     with open(config_file, 'r') as config_fd:
         if config_file.endswith("json"):

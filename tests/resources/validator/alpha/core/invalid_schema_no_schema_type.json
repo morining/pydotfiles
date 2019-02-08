@@ -1,4 +1,5 @@
 {
+    "version": "alpha",
     "os": {
         "name": "macos",
         "shell": "bash",

@@ -31,12 +31,32 @@ def parse_default_settings(default_settings_data):
     if not default_settings_data:
         default_settings_data = []
 
+    version = default_settings_data.get("version")
+    schema_type = default_settings_data.get("schema")
+
+    if version != "alpha":
+        raise NotImplementedError(f"Loading: Unable to load default settings file with an unsupported version number [found_version={version}]")
+
+    if schema_type != "default_settings":
+        raise ValueError(f"Loading: Invalid data file was passed in based on detected schema type [schema_type={schema_type}]")
+
+    return alpha_default_parse_data(default_settings_data.get("default_settings"))
+
+
+"""
+Version-based parsers
+"""
+
+
+def alpha_default_parse_data(default_settings_data):
     settings = []
     for raw_setting in default_settings_data:
         name = raw_setting.get("name")
         enabled = raw_setting.get("enabled", True)
         description = raw_setting.get("description")
-        start = MacVersion.from_name(raw_setting.get("start"))
+
+        raw_start = raw_setting.get("start")
+        start = None if raw_start is None else MacVersion.from_name(raw_start)
 
         raw_end = raw_setting.get("end")
         end = None if raw_end is None else MacVersion.from_name(raw_end)

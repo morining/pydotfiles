@@ -47,11 +47,21 @@ class Setting:
 
 class VersionRange:
 
-    def __init__(self, start, end=None):
+    def __init__(self, start=None, end=None):
         """
+        A None start is taken to be the equivalent
+        of "since the beginning of time"
+
         A None end is taken to be the equivalent of
         "currently supported"
         """
+
+        if start is not None and not isinstance(start, StrictVersion) and not isinstance(start, MacVersion):
+            raise ValueError(f"Unable to create a version range, passed in type for start was invalid [start={type(start)}], should have been a StrictVersion")
+
+        if end is not None and not isinstance(end, StrictVersion) and not isinstance(start, MacVersion):
+            raise ValueError(f"Unable to create a version range, passed in type for start was invalid [end={type(start)}], should have been a StrictVersion")
+
         self.start = start
         self.end = end
 
@@ -59,8 +69,17 @@ class VersionRange:
         return f"VersionRange(start={self.start}, end={self.end})"
 
     def is_in_range(self, current_version):
-        if self.end is None:
+        # Infinite range case
+        if self.start is None and self.end is None:
+            return True
+
+        if self.start is None and self.end is not None:
+            return current_version <= self.end
+
+        if self.end is None and self.start is not None:
             return self.start <= current_version
+
+        # For somebody who likes to keep their books clean
         return self.start <= current_version <= self.end
 
 
@@ -79,6 +98,9 @@ class MacVersion(Enum):
 
     @staticmethod
     def from_version(version):
+        if version is None:
+            raise ValueError("MacVersion: Can't identify none version number")
+
         if isinstance(version, str):
             version = StrictVersion(version)
 
@@ -90,6 +112,8 @@ class MacVersion(Enum):
 
     @staticmethod
     def from_name(name):
+        if name is None:
+            raise KeyError("MacVersion: Can't identify none version name")
         return MacVersion[name.upper()]
 
     def __lt__(self, other):
