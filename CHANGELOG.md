@@ -1,5 +1,18 @@
 # Changelog | Pydotfiles
 
+# [3.0.0](https://github.com/JasonYao/pydotfiles/compare/v2.1.0...v3.0.0) (2019-02-09)
+
+
+### Features
+
+* **validation:** Formalizes the schema for default setting validation, and enables multiple-schema ([b1bde2d](https://github.com/JasonYao/pydotfiles/commit/b1bde2d)), closes [#57](https://github.com/JasonYao/pydotfiles/issues/57)
+
+
+### BREAKING CHANGES
+
+* **validation:** Requires a 'version' and 'schema' field for all core and referenced schemas. Valid
+schema options currently include 'core' and 'default_settings'
+
 # [2.1.0](https://github.com/JasonYao/pydotfiles/compare/v2.0.0...v2.1.0) (2019-02-06)
 
 
