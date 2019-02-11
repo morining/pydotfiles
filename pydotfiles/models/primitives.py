@@ -233,28 +233,3 @@ class CacheDirectory:
         else:
             logger.debug(f"Caching: No cache directory found [directory={self.cache_directory}]")
         return None
-
-
-"""
-TODO P3: Implement the following primitive
-classes
-"""
-
-
-class EnvironmentManager:
-    """
-    Class representing a dev environment manager
-    such as pyenv, rbenv, or jenv
-    """
-
-    def __init__(self, name, plugins):
-        self.name = name
-        self.plugins = plugins
-
-    def install(self):
-        # TODO P3: Implement
-        pass
-
-    def uninstall(self):
-        # TODO P3: Implement
-        pass

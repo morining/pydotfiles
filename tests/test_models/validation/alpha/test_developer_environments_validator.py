@@ -10,9 +10,9 @@ ConfigMapper tests
 """
 
 
-def test_successful_loading_schema_alpha_core():
+def test_successful_loading_schema_alpha_developer_environments():
     # System under test
-    schema = ConfigMapper.get_schema("alpha", "core")
+    schema = ConfigMapper.get_schema("alpha", "developer_environments")
 
     # Verification
     assert schema is not None
@@ -28,8 +28,6 @@ def test_successful_loading_schema_alpha_core():
     assert schema.get("allOf")[1] is not None
     assert schema.get("allOf")[1].get("properties") is not None
 
-    assert schema.get("allOf")[1].get("properties").get("os") is not None
-    assert schema.get("allOf")[1].get("properties").get("actions") is not None
     assert schema.get("allOf")[1].get("properties").get("environments") is not None
 
 
@@ -41,7 +39,7 @@ Validator tests
 def test_invalid_schema_no_version():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_no_version.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_no_version.json")
 
     # System under test
     with pytest.raises(ValidationError):
@@ -51,114 +49,77 @@ def test_invalid_schema_no_version():
 def test_invalid_schema_no_schema_type():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_no_schema_type.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_no_schema_type.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
 
 
-def test_invalid_schema_action_no_action():
+def test_invalid_schema_environments_no_language():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_actions_no_action.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_environments_no_language.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
 
 
-def test_invalid_schema_action_no_files():
+def test_invalid_schema_environments_no_versions():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_actions_no_files.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_environments_no_versions.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
 
 
-def test_invalid_schema_action_invalid_action():
+def test_invalid_schema_environments_manager_no_name():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_actions_invalid_action.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_environment_manager_no_name.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
 
 
-def test_invalid_schema_environments_no_name():
+def test_invalid_schema_plugin_no_name():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_environments_no_name.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_plugin_no_name.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
 
 
-def test_invalid_schema_environments_invalid_name():
+def test_invalid_schema_virtual_environments_no_name():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_environments_invalid_name.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_virtual_environments_no_name.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
 
 
-def test_invalid_schema_os_no_name():
+def test_invalid_schema_virtual_environments_no_version():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_os_no_name.json")
+    data = load_test_data("alpha.developer_environments", "invalid_schema_virtual_environments_no_version.json")
 
     # System under test
     with pytest.raises(ValidationError):
         validator.validate_data(data)
-
-
-def test_invalid_schema_os_invalid_name():
-    # Setup
-    validator = Validator()
-    data = load_test_data("alpha.core", "invalid_schema_os_invalid_name.json")
-
-    # System under test
-    with pytest.raises(ValidationError):
-        validator.validate_data(data)
-
-
-def test_valid_schema_actions():
-    # Setup
-    validator = Validator()
-    data = load_test_data("alpha.core", "valid_schema_actions.json")
-
-    # System under test
-    validator.validate_data(data)
-
-
-def test_valid_schema_os():
-    # Setup
-    validator = Validator()
-    data = load_test_data("alpha.core", "valid_schema_os.json")
-
-    # System under test
-    validator.validate_data(data)
-
-
-def test_valid_schema_environments():
-    # Setup
-    validator = Validator()
-    data = load_test_data("alpha.core", "valid_schema_environments.json")
-
-    # System under test
-    validator.validate_data(data)
 
 
 def test_valid_schema_all():
     # Setup
     validator = Validator()
-    data = load_test_data("alpha.core", "valid_schema_all.json")
+    data = load_test_data("alpha.developer_environments", "valid_schema_all.json")
 
     # System under test
     validator.validate_data(data)

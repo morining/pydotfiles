@@ -1,23 +1,6 @@
 {
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "properties": {
-        "version": {
-            "enum": ["alpha"]
-        },
-        "schema": {
-            "enum": ["core", "default_settings"]
-        },
-        "os": {
-            "$ref": "#/definitions/OperatingSystemType"
-        },
-        "actions": {
-            "$ref": "#/definitions/ActionsType"
-        },
-        "environments": {
-            "$ref": "#/definitions/EnvironmentsType"
-        }
-    },
-    "required": ["version", "schema"],
     "definitions": {
         "OperatingSystemType": {
             "type": "object",
@@ -51,12 +34,6 @@
                 }
             },
             "required": ["name"]
-        },
-        "ActionsType": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/ActionType"
-            }
         },
         "ActionType": {
             "type": "object",
@@ -92,10 +69,10 @@
             "required": ["action", "files"]
 
         },
-        "EnvironmentsType": {
+        "ActionsType": {
             "type": "array",
             "items": {
-                "$ref": "#/definitions/EnvironmentType"
+                "$ref": "#/definitions/ActionType"
             }
         },
         "EnvironmentType": {
@@ -127,6 +104,33 @@
                 }
             },
             "required": ["language", "versions"]
+        },
+        "EnvironmentsType": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/EnvironmentType"
+            }
         }
-    }
+    },
+
+    "allOf": [
+        {
+            "$ref": "./common.json"
+        },
+        {
+            "properties": {
+                "os": {
+                    "$ref": "core.json#/definitions/OperatingSystemType"
+                },
+                "actions": {
+                    "$ref": "core.json#/definitions/ActionsType"
+                },
+                "environments": {
+                    "$ref": "core.json#/definitions/EnvironmentsType"
+                }
+            }
+        }
+    ]
+
+
 }

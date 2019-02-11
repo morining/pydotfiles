@@ -37,52 +37,6 @@ class FileActionType(Enum):
         return file_action_reverse_mapping.get(file_action_type)
 
 
-class OS(Enum):
-    """
-    Represents a given operating system
-    """
-    MACOS = auto()
-    LINUX = auto()
-    UBUNTU = auto()
-    CENTOS = auto()
-
-    @staticmethod
-    def from_string(label):
-        if label is None:
-            raise KeyError("Enum: No operating system was passed in")
-
-        if label == "darwin":
-            return OS.MACOS
-
-        return OS[label.upper()]
-
-    @staticmethod
-    def get_package_manager(os):
-        return {
-            OS.MACOS: PackageManager.BREW,
-            OS.LINUX: PackageManager.APT,
-            OS.UBUNTU: PackageManager.APT,
-            OS.CENTOS: PackageManager.YUM
-        }.get(os)
-
-
-class PackageManager(Enum):
-    """
-    Represents a system package manager
-    """
-    BREW = auto()
-
-    # Linux package managers
-    YUM = auto()
-    APT = auto()
-
-    @staticmethod
-    def from_label(label):
-        if label is None:
-            raise KeyError("Enum: No package manager was passed in")
-        return PackageManager[label.upper()]
-
-
 class OverrideAction(Enum):
     """
     Represents an override action that

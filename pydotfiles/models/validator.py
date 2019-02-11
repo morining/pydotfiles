@@ -4,7 +4,7 @@ import json
 import yaml
 import jsonschema
 from pathlib import Path
-from pkg_resources import resource_stream
+from pkg_resources import resource_stream, resource_filename
 
 from .utils import set_logging, load_data_from_file
 from .exceptions import ValidationError, ValidationErrorReason
@@ -23,6 +23,12 @@ class ConfigMapper:
     def get_schema(version, schema):
         schema_file = resource_stream(f"pydotfiles.resources.schemas.{version}", f"{schema}.json")
         return json.load(schema_file)
+
+    @staticmethod
+    def get_resolver(version, schema):
+        schema_file_name = resource_filename(f"pydotfiles.resources.schemas.{version}", f"{schema}.json")
+        schema_file_path = Path(schema_file_name)
+        return jsonschema.RefResolver(f"file://{str(schema_file_path.parent)}/", None)
 
 
 class Validator:
@@ -53,13 +59,10 @@ class Validator:
         # Generates a set of files that we need to validate from a tree structure
         initial_files_to_validate = set()
         for path_prefix, directory_names, file_names in os.walk(directory):
-            file_name_set = set(file_names)
-            if "settings.json" in file_name_set:
-                initial_files_to_validate.add(os.path.join(path_prefix, "settings.json"))
-            elif "settings.yaml" in file_name_set:
-                initial_files_to_validate.add(os.path.join(path_prefix, "settings.yaml"))
-            elif "settings.yml" in file_name_set:
-                initial_files_to_validate.add(os.path.join(path_prefix, "settings.yml"))
+            for file_name_path in file_names:
+                file_name = str(file_name_path)
+                if file_name.endswith(".json") or file_name.endswith(".yaml") or file_name.endswith(".yml"):
+                    initial_files_to_validate.add(os.path.join(path_prefix, file_name))
 
         validation_exceptions = []
         for file_to_validate in initial_files_to_validate:
@@ -132,16 +135,20 @@ class Validator:
             raise ValidationError(ValidationErrorReason.INVALID_SCHEMA_VERSION, "Validator: The schema version was not found (is there a 'version' field?)")
 
         # Isolates for which schema type we need to get
-        schema = data.get("schema")
-        if schema is None:
+        schema_type = data.get("schema")
+        if schema_type is None:
             raise ValidationError(ValidationErrorReason.INVALID_SCHEMA_TYPE, "Validator: The schema type was not found (is there a 'schema' field?)")
 
         # Retrieves the required schema
-        schema = ConfigMapper.get_schema(version, schema)
+        schema = ConfigMapper.get_schema(version, schema_type)
+
+        # We need a custom resolver since we're referencing other schemas
+        # For more information, see https://stackoverflow.com/a/53968771
+        resolver = ConfigMapper.get_resolver(version, schema_type)
 
         # Validates the given data to the schema
         try:
-            jsonschema.validate(data, schema)
+            jsonschema.validate(data, schema, resolver=resolver)
         except jsonschema.exceptions.ValidationError as e:
             validator_error = ValidationError(ValidationErrorReason.INVALID_SCHEMA)
             validator_error.context_map['reason'] = e.message

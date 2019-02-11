@@ -1,7 +1,12 @@
 import plistlib
-
+from typing import Dict, List
 from pydotfiles.models.utils import load_data_from_file
 from pydotfiles.defaults import MacVersion, VersionRange, Setting
+
+from pydotfiles.environments import VirtualEnvironment
+from pydotfiles.environments import LanguagePluginManager, LanguageEnvironmentPluginManager
+from pydotfiles.environments import LanguageManager, LanguageEnvironmentManager
+from pydotfiles.environments import DevelopmentEnvironment
 
 
 def get_os_default_settings(default_setting_file_path):
@@ -43,6 +48,13 @@ def parse_default_settings(default_settings_data):
     return alpha_default_parse_data(default_settings_data.get("default_settings"))
 
 
+def parse_developer_environments(developer_environments_data):
+    if developer_environments_data is None:
+        return []
+
+    return alpha_developer_environments_parse_data(developer_environments_data)
+
+
 """
 Version-based parsers
 """
@@ -82,3 +94,44 @@ def alpha_default_parse_data(default_settings_data):
         ))
 
     return settings
+
+
+def alpha_developer_environments_parse_data(developer_environments_data):
+    developer_environments = []
+
+    for raw_developer_environment in developer_environments_data:
+        language = raw_developer_environment.get("language")
+        versions = raw_developer_environment.get("versions")
+        language_environment_manager = parse_language_environment_manager(raw_developer_environment.get("environment_manager"))
+
+        developer_environments.append(DevelopmentEnvironment(
+            language=language,
+            versions=versions,
+            language_environment_manager=language_environment_manager
+        ))
+    return developer_environments
+
+
+def parse_language_environment_manager(environment_manager_data: Dict):
+    environment_manager = LanguageManager.from_string(environment_manager_data.get("name"))
+    plugin_managers = parse_language_environment_plugins(environment_manager_data.get("plugins"))
+
+    return LanguageEnvironmentManager(environment_manager, language_plugin_managers=plugin_managers)
+
+
+def parse_language_environment_plugins(plugins_data: List[Dict]):
+    if plugins_data is None:
+        return []
+
+    plugin_managers = []
+    for plugin_data in plugins_data:
+        language_plugin = LanguagePluginManager.from_string(plugin_data.get("name"))
+        virtual_environments_data = parse_virtual_environments(plugin_data.get("virtual_environments"))
+        plugin_managers.append(LanguageEnvironmentPluginManager(language_plugin, virtual_environments_data))
+    return plugin_managers
+
+
+def parse_virtual_environments(virtual_environments_data: List[Dict]):
+    if virtual_environments_data is None:
+        return []
+    return [VirtualEnvironment(virtual_environment.get("version"), virtual_environment.get("name")) for virtual_environment in virtual_environments_data]

@@ -188,18 +188,7 @@ def run_command(command, use_sudo=False, sudo_password="", check_output=True):
         raise RuntimeError(f"Command Execution: Invalid command passed in [command={command}]")
 
     if use_sudo:
-        process = subprocess.Popen(['sudo', '-S'] + command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-
-        try:
-            stdout, stderr = process.communicate(sudo_password + '\n', timeout=3)
-
-            if check_output and process.returncode != 0:
-                raise RuntimeError(f"Command Execution: A given command had a non-zero return code [command='{command}', err='{stderr}']")
-
-            return stdout.strip()
-        except subprocess.TimeoutExpired:
-            process.kill()
-            raise
+        run_command_with_communication(f"sudo -S {command}", sudo_password, check_output)
     else:
         output = subprocess.run(command, encoding='utf-8', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -207,6 +196,21 @@ def run_command(command, use_sudo=False, sudo_password="", check_output=True):
             raise RuntimeError(f"Command Execution: A given command had a non-zero return code [command='{command}', err='{output.stderr}']")
 
         return output.stdout.strip()
+
+
+def run_command_with_communication(command, communication, check_output=True):
+    process = subprocess.Popen(command.split(), stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+
+    try:
+        stdout, stderr = process.communicate(communication + '\n')
+
+        if check_output and process.returncode != 0:
+            raise RuntimeError(f"Command Execution: A given command had a non-zero return code [command='{command}', err='{stderr}']")
+
+        return stdout.strip()
+    except subprocess.TimeoutExpired:
+        process.kill()
+        raise
 
 
 """

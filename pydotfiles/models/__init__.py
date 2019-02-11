@@ -15,9 +15,9 @@ from git.remote import RemoteProgress
 from progressbar import ProgressBar
 
 # Project imports
-from .enums import FileActionType, OS, PackageManager, OverrideAction
+from .enums import FileActionType, OverrideAction
 from .constants import *
-from .primitives import FileAction, CacheDirectory, EnvironmentManager
+from .primitives import FileAction, CacheDirectory
 from .exceptions import PydotfilesError, PydotfilesErrorReason, ValidationError
 from .validator import Validator
 
@@ -28,6 +28,8 @@ from pydotfiles.utils import remove_prefix
 from pydotfiles.defaults import get_current_mac_version
 from .utils import set_logging
 from pydotfiles.loading import get_os_default_settings
+from pydotfiles.common import OS, PackageManager
+from pydotfiles.loading import parse_developer_environments
 
 
 logger = logging.getLogger(__name__)
@@ -194,7 +196,7 @@ class Module:
         self.settings_file = settings_file
         settings_data = load_data_from_file(self.settings_file)
         self.operating_system = parse_operating_system_config(settings_data.get('os'), self.cache_directory, self.directory)
-        self.environments = parse_environment_configs(settings_data.get('environments'), self.cache_directory)
+        self.environments = parse_developer_environments(settings_data.get('environments'))
         self.actions, self.is_sudo_used = parse_action_configs(settings_data.get('actions'), self.directory, self.symlinks, self.other_files)
         self.sudo_password = None
 
@@ -329,29 +331,6 @@ class Module:
             self.post_action.sudo_password = self.sudo_password
 
 
-class DevelopmentEnvironment:
-    """
-    Class representing a dev environment, such as
-    python, ruby, or java
-    """
-
-    def __init__(self, language, versions, environment_manager, cache_directory):
-        self.language = language
-        self.versions = versions
-        self.environment_manager = environment_manager
-        self.cache_directory = cache_directory
-
-    def install(self):
-        logger.warning(f"TODO Implement: dev env install [lang={self.language}, versions={self.versions}, env manager={self.environment_manager}")
-        # TODO P4: Implement
-        pass
-
-    def uninstall(self):
-        logger.warning(f"TODO Implement: dev env uninstall [lang={self.language}, versions={self.versions}, env manager={self.environment_manager}")
-        # TODO P4: Implement
-        pass
-
-
 class OperatingSystem:
     """
     Class representing configurations for a given
@@ -454,7 +433,8 @@ class OperatingSystem:
 
         if self.package_manager == PackageManager.BREW:
             command = f"brew install {package_with_args}"
-            command_result = subprocess.run(command.split(), capture_output=True)
+
+            command_result = subprocess.run(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             # Version error-handling
             stderr = command_result.stderr.decode()
@@ -685,37 +665,6 @@ def load_config_repo_remote(config_repo_local):
 """
 Parsing: Module-level configs
 """
-
-
-def parse_environment_configs(environments, cache_directory):
-    """
-    Loads an environment's configuration from
-    a module's setting config
-    """
-    if environments is None:
-        return []
-    return [parse_environment(environment, cache_directory) for environment in environments if environment is not None]
-
-
-def parse_environment(environment, cache_directory):
-    """
-    Deserializes a single environment
-    dictionary to a DevelopmentEnvironment
-    object
-    """
-    if environment is None:
-        return None
-    else:
-        language = environment['language']
-        versions = environment['versions']
-
-        environment_manager_name = environment['environment_manager']
-        environment_manager = EnvironmentManager(
-            environment_manager_name.get('name'),
-            environment_manager_name.get('plugins')
-        )
-
-    return DevelopmentEnvironment(language, versions, environment_manager, cache_directory)
 
 
 def parse_operating_system_config(os_config, cache_directory, directory):

@@ -53,7 +53,8 @@ setup(
         'PyYAML>=3.13',
         'jsonschema>=2.6.0',
         'GitPython>=2.1.11',
-        'progressbar2>=3.38.0'
+        'progressbar2>=3.38.0',
+        'dataclasses;python_version<"3.7"',
     ],
 
     scripts=['pydotfiles/bin/pydotfiles'],

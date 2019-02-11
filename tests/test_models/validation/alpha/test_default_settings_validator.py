@@ -17,17 +17,18 @@ def test_successful_loading_schema_alpha_default_settings():
     # Verification
     assert schema is not None
     assert schema.get("type") == "object"
-    assert schema.get("properties") is not None
 
-    assert schema.get("properties").get("version") is not None
-    assert schema.get("properties").get("version").get("enum") is not None
-    assert schema.get("properties").get("version").get("enum")[0] is not None
-    assert schema.get("properties").get("version").get("enum")[0] == "alpha"
+    assert schema.get("allOf") is not None
+    assert len(schema.get("allOf")) == 2
 
-    assert schema.get("properties").get("schema") is not None
-    assert schema.get("properties").get("schema").get("enum") is not None
-    assert schema.get("properties").get("schema").get("enum")[0] is not None
-    assert schema.get("properties").get("schema").get("enum")[1] == "default_settings"
+    assert schema.get("allOf")[0] is not None
+    assert schema.get("allOf")[0].get("$ref") is not None
+    assert schema.get("allOf")[0].get("$ref") == "./common.json"
+
+    assert schema.get("allOf")[1] is not None
+    assert schema.get("allOf")[1].get("properties") is not None
+
+    assert schema.get("allOf")[1].get("properties").get("default_settings") is not None
 
 
 """

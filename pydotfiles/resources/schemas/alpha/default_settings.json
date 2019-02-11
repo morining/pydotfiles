@@ -1,17 +1,6 @@
 {
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "properties": {
-        "version": {
-            "enum": ["alpha"]
-        },
-        "schema": {
-            "enum": ["core", "default_settings"]
-        },
-        "default_settings": {
-            "$ref": "#/definitions/DefaultSettingsType"
-        }
-    },
-    "required": ["version", "schema"],
     "definitions": {
         "MacVersion": {
             "enum": [
@@ -22,13 +11,7 @@
                 "mojave"
             ]
         },
-        "DefaultSettingsType": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/DefaultSettingType"
-            }
-        },
-        "DefaultSettingType": {
+         "DefaultSettingType": {
             "type": "object",
             "properties": {
                 "name": {
@@ -66,6 +49,27 @@
                 }
             },
             "required": ["name", "command"]
+        },
+        "DefaultSettingsType": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/DefaultSettingType"
+            }
         }
-    }
+    },
+
+    "allOf": [
+        {
+            "$ref": "./common.json"
+        },
+        {
+            "properties": {
+                "default_settings": {
+                    "$ref": "default_settings.json#/definitions/DefaultSettingsType"
+                }
+            }
+        }
+    ]
+
+
 }

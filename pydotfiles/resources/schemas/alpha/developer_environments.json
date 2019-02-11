@@ -1,0 +1,88 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "definitions": {
+        "VirtualEnvironment": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": ["version", "name"]
+        },
+        "Plugin": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "virtual_environments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VirtualEnvironment"
+                    }
+                }
+            },
+            "required": ["name"]
+        },
+        "Plugins": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Plugin"
+            }
+        },
+        "EnvironmentManager": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "plugins": {
+                    "$ref": "#/definitions/Plugins"
+                }
+            },
+            "required": ["name"]
+        },
+        "EnvironmentType": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string"
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "environment_manager": {
+                    "$ref": "#/definitions/EnvironmentManager"
+                }
+            },
+            "required": ["language", "versions"]
+
+        },
+        "EnvironmentsType": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/EnvironmentType"
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./common.json"
+        },
+        {
+            "properties": {
+                "environments": {
+                    "$ref": "developer_environments.json#/definitions/EnvironmentsType"
+                }
+            }
+        }
+    ]
+}

@@ -37,7 +37,7 @@ class Setting:
         current_status_check_result = run_command(self.check_command, self.run_as_sudo, sudo_password, check_output=self.check_output)
 
         if current_status_check_result != self.expected_check_state:
-            logger.info(f"Setting: Expected value not found, running command now [action={self.name}, expected={self.expected_check_state.encode('unicode_escape')}, found={current_status_check_result.encode('unicode_escape')}, run_as_sudo={self.run_as_sudo}")
+            logger.info(f"Setting: Expected value not found, running command now [action={self.name}, expected={self.expected_check_state}, found={current_status_check_result}, run_as_sudo={self.run_as_sudo}")
 
         return current_status_check_result != self.expected_check_state
 
