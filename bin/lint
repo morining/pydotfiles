@@ -6,8 +6,10 @@ set -e
 bash_files=(
     start-opinionated start-base
     bin/lint bin/prepare-release
-    bin/generate-release
+    bin/generate-release bin/install_dependencies
 )
+
+schema_root_directory="pydotfiles/resources/schemas"
 
 ##
 # Pretty output functions
@@ -47,3 +49,17 @@ else
     autopep8 --recursive pydotfiles --in-place --ignore E501
     exit 1
 fi
+
+# Lints JSON
+
+# See https://github.com/koalaman/shellcheck/wiki/SC2044
+while IFS= read -r -d '' file
+do
+    # See https://stackoverflow.com/a/46955018
+    if jq -e . >/dev/null 2>&1 <<<"$(cat "${file%}")"; then
+        success "JSON Linting: JSON File is successfully linted [file=${file}]"
+    else
+        fail "JSON Linting: Failed JSON linting [file=${file}]"
+        exit 1
+    fi
+done <   <(find "${schema_root_directory}" -name '*.json' -print0)
