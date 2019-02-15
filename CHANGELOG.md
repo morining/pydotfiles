@@ -1,5 +1,12 @@
 # Changelog | Pydotfiles
 
+# [3.1.0](https://github.com/JasonYao/pydotfiles/compare/v3.0.0...v3.1.0) (2019-02-15)
+
+
+### Features
+
+* **developer environments:** Adds in the ability to install language runtimes and specified virtual ([15395b4](https://github.com/JasonYao/pydotfiles/commit/15395b4)), closes [#42](https://github.com/JasonYao/pydotfiles/issues/42) [#43](https://github.com/JasonYao/pydotfiles/issues/43) [#66](https://github.com/JasonYao/pydotfiles/issues/66) [#59](https://github.com/JasonYao/pydotfiles/issues/59)
+
 # [3.0.0](https://github.com/JasonYao/pydotfiles/compare/v2.1.0...v3.0.0) (2019-02-09)
 
 
