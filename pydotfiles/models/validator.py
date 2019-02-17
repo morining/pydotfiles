@@ -8,7 +8,7 @@ from pkg_resources import resource_stream, resource_filename
 
 from .utils import set_logging, load_data_from_file
 from .exceptions import ValidationError, ValidationErrorReason
-
+from pydotfiles.loading import get_config_file_paths
 logger = logging.getLogger(__name__)
 
 
@@ -56,16 +56,10 @@ class Validator:
 
         logger.info(f"Validator: Validating directory [directory={directory}]")
 
-        # Generates a set of files that we need to validate from a tree structure
-        initial_files_to_validate = set()
-        for path_prefix, directory_names, file_names in os.walk(directory):
-            for file_name_path in file_names:
-                file_name = str(file_name_path)
-                if file_name.endswith(".json") or file_name.endswith(".yaml") or file_name.endswith(".yml"):
-                    initial_files_to_validate.add(os.path.join(path_prefix, file_name))
+        files_to_validate = get_config_file_paths(directory)
 
         validation_exceptions = []
-        for file_to_validate in initial_files_to_validate:
+        for file_to_validate in files_to_validate:
             try:
                 self.validate_file(file_to_validate)
             except ValidationError as e:

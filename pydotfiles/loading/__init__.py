@@ -1,5 +1,8 @@
 import plistlib
-from typing import Dict, List
+import os
+from typing import Dict, List, Set
+from pathlib import Path
+
 from pydotfiles.models.utils import load_data_from_file
 from pydotfiles.defaults import MacVersion, VersionRange, Setting
 
@@ -7,6 +10,18 @@ from pydotfiles.environments import VirtualEnvironment
 from pydotfiles.environments import LanguagePluginManager, LanguageEnvironmentPluginManager
 from pydotfiles.environments import LanguageManager, LanguageEnvironmentManager
 from pydotfiles.environments import DevelopmentEnvironment
+
+
+def get_config_file_paths(directory: Path) -> Set[Path]:
+    # Generates a set of files that we need to validate from a tree structure
+    relevant_pydotfiles = set()
+    for path_prefix, directory_names, file_names in os.walk(directory):
+        for file_name_path in file_names:
+            file_name = str(file_name_path)
+            if file_name.endswith(".json") or file_name.endswith(".yaml") or file_name.endswith(".yml"):
+                relevant_pydotfiles.add(Path(path_prefix, file_name))
+
+    return relevant_pydotfiles
 
 
 def get_os_default_settings(default_setting_file_path):
