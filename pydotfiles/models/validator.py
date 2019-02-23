@@ -8,7 +8,7 @@ from pkg_resources import resource_stream, resource_filename
 
 from .utils import set_logging, load_data_from_file
 from .exceptions import ValidationError, ValidationErrorReason
-from pydotfiles.loading import get_config_file_paths
+from pydotfiles.loading import get_module_paths
 logger = logging.getLogger(__name__)
 
 
@@ -56,16 +56,21 @@ class Validator:
 
         logger.info(f"Validator: Validating directory [directory={directory}]")
 
-        files_to_validate = get_config_file_paths(directory)
+        module_paths = get_module_paths(directory)
 
         validation_exceptions = []
-        for file_to_validate in files_to_validate:
+
+        # Validates configuration files for compliance with schema
+        for file_to_validate in module_paths.config_paths:
             try:
                 self.validate_file(file_to_validate)
             except ValidationError as e:
                 if self.is_verbose:
                     logger.exception(e.help_message)
                 validation_exceptions.append(e)
+
+        # Validates script files
+        # TODO
 
         number_of_validation_errors = len(validation_exceptions)
         if number_of_validation_errors == 0:

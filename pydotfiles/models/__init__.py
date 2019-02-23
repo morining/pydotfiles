@@ -8,6 +8,7 @@ import re
 from subprocess import Popen, PIPE, TimeoutExpired
 from distutils.version import StrictVersion
 import logging
+from typing import List
 
 # Vendor imports
 from git import Repo
@@ -27,10 +28,12 @@ from .dock import DockManager
 from pydotfiles.utils import remove_prefix
 from pydotfiles.defaults import get_current_mac_version
 from .utils import set_logging
-from pydotfiles.loading import get_os_default_settings
+from pydotfiles.loading import get_os_default_settings, get_module_paths, get_active_modules
 from pydotfiles.common import OS, PackageManager
 from pydotfiles.loading import parse_developer_environments
+from pydotfiles.environments import DevelopmentEnvironment
 
+from .primitives import Symlink
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +56,8 @@ class Dotfiles:
         else:
             self.config_repo_remote = config_repo_remote
 
-        module_information = load_active_modules(config_repo_local, active_modules, self.host_os, self.cache_directory) if self.is_cloned else None
+        # Returns the modules and whether sudo is used in any of the modules
+        module_information = get_active_modules(config_repo_local, active_modules, self.cache_directory) if self.is_cloned else None
 
         self.modules = None if module_information is None else module_information[0]
         self.is_sudo_used = None if module_information is None else module_information[1]
@@ -173,162 +177,6 @@ class Dotfiles:
         for module in self.modules.values():
             module.sudo_password = self.sudo_password
             module.__propagate_sudo_password__()
-
-
-class Module:
-    """
-    Class representing a single module's configuration
-    values
-    """
-
-    def __init__(self, name, directory, settings_file, start_file, post_file, undo_start_file, undo_post_file, symlinks, other_files, host_os, cache_directory):
-        self.name = name
-        self.directory = directory
-        self.symlinks = symlinks
-        self.other_files = other_files
-        self.host_os = host_os
-        self.cache_directory = cache_directory
-
-        self.start_action = None if start_file is None else FileAction(FileActionType.SCRIPT, start_file, undo_start_file, None, None)
-        self.post_action = None if post_file is None else FileAction(FileActionType.SCRIPT, post_file, undo_post_file, None, None)
-
-        # Loads in the settings file
-        self.settings_file = settings_file
-        settings_data = load_data_from_file(self.settings_file)
-        self.operating_system = parse_operating_system_config(settings_data.get('os'), self.cache_directory, self.directory)
-        self.environments = parse_developer_environments(settings_data.get('environments'))
-        self.actions, self.is_sudo_used = parse_action_configs(settings_data.get('actions'), self.directory, self.symlinks, self.other_files)
-        self.sudo_password = None
-
-    def __str__(self):
-        return f"Module [Name={self.name}, Start={self.start_action}, Settings={self.settings_file}, Post={self.post_action}]"
-
-    def install(self):
-        if self.operating_system is not None and self.operating_system.name != self.host_os:
-            logger.info(f"Install: Skipping operating system installation due to OS mismatch [HostOS={self.host_os}, ModuleOS={self.operating_system.name}]")
-            return
-
-        logger.info(f"Install: Installing module [name={self.name}]")
-
-        if self.start_action is not None:
-            self.start_action.do()
-
-        if self.operating_system is not None:
-            self.operating_system.install_packages()
-            self.operating_system.install_applications()
-            self.operating_system.install_settings()
-            self.operating_system.install_default_dock()
-
-        for environment in self.environments:
-            environment.install()
-
-        self.do_actions()
-
-        if self.post_action is not None:
-            self.post_action.do()
-
-        logger.info(f"Install: Successfully installed module [name={self.name}]")
-
-    def uninstall(self, uninstall_packages, uninstall_applications, uninstall_environments):
-        if self.operating_system is not None and self.operating_system.name != self.host_os:
-            logger.info(f"Uninstall: Skipping operating system uninstallation due to OS mismatch [HostOS={self.host_os}, ModuleOS={self.operating_system.name}]")
-            return
-
-        logger.info(f"Uninstall: Uninstalling module [name={self.name}]")
-
-        if self.start_action is not None:
-            self.start_action.undo()
-
-        self.undo_actions()
-
-        if uninstall_environments:
-            for environment in self.environments:
-                environment.uninstall()
-
-        if self.operating_system is not None:
-            if uninstall_applications:
-                self.operating_system.uninstall_applications()
-
-            if uninstall_packages:
-                self.operating_system.uninstall_packages()
-
-        if self.post_action is not None:
-            self.post_action.undo()
-
-        logger.info(f"Uninstall: Successfully uninstalled module [name={self.name}]")
-
-    def do_actions(self):
-        override_action = None
-        for action in self.actions:
-            try:
-                override_action = self.__do_action_with_override__(override_action, action)
-            except FileExistsError:
-                logger.debug(f"Action: Failed to complete action [Action={action}]")
-                override_action = get_user_override(action)
-                override_action = self.__do_action_with_override__(override_action, action)
-
-    def undo_actions(self):
-        for file_action in self.actions:
-            try:
-                logger.info(f"Action: Starting undo action [Action={file_action}]")
-                file_action.undo()
-                logger.info(f"Action: Successfully undid action [Action={file_action}]")
-            except Exception:
-                logger.exception(f"Action: Failed to undo action [Action={file_action}]")
-                raise
-
-    @staticmethod
-    def __do_action_with_override__(override_action, action):
-        # Normal procedure
-        if override_action is None:
-            logger.info(f"Action: Starting action [Action={action}]")
-            action.do()
-            logger.info(f"Action: Successfully completed action [Action={action}]")
-            return None
-
-        # Skips the actions
-        if override_action == OverrideAction.SKIP_FILE:
-            logger.info(f"Action: Skipping action [Action={action}]")
-            return None
-
-        if override_action == OverrideAction.SKIP_ALL_FILES:
-            logger.info(f"Action: Skipping all actions [Action={action}]")
-            return OverrideAction.SKIP_ALL_FILES
-
-        # Overwrites the actions
-        if override_action == OverrideAction.OVERWRITE_FILE:
-            logger.info(f"Action: Overwriting action destination [Action={action}]")
-            action.overwrite()
-            return None
-
-        if override_action == OverrideAction.OVERWRITE_ALL_FILES:
-            logger.info(f"Action: Overwriting all action's destinations [Action={action}]")
-            action.overwrite()
-            return OverrideAction.OVERWRITE_ALL_FILES
-
-        # Backs up first before performing the action
-        if override_action == OverrideAction.BACKUP_FILE:
-            logger.info(f"Action: Backing up first for action [Action={action}]")
-            action.backup()
-            return None
-
-        if override_action == OverrideAction.BACKUP_ALL_FILES:
-            logger.info(f"Action: Backing up first for all actions [Action={action}]")
-            action.backup()
-            return None
-
-    def __propagate_sudo_password__(self):
-        for action in self.actions:
-            action.sudo_password = self.sudo_password
-
-        if self.operating_system is not None:
-            self.operating_system.sudo_password = self.sudo_password
-
-        if self.start_action is not None:
-            self.start_action.sudo_password = self.sudo_password
-
-        if self.post_action is not None:
-            self.post_action.sudo_password = self.sudo_password
 
 
 class OperatingSystem:
@@ -573,6 +421,154 @@ class OperatingSystem:
             self.uninstall_package(application)
 
 
+class Module:
+    """
+    Class representing a single module's configuration
+    values
+    """
+
+    def __init__(self, name: str, host_os: OS, directory: Path, start_action: FileAction, post_action: FileAction, operating_system: OperatingSystem, developer_environments: List[DevelopmentEnvironment], actions: List[FileAction]):
+        self.name = name
+        self.directory = directory
+        self.host_os = host_os
+        self.start_action = start_action
+        self.post_action = post_action
+        self.operating_system = operating_system
+        self.developer_environments = developer_environments
+        self.actions = actions
+        self.sudo_password = None
+
+    def __str__(self):
+        return f"Module [name={self.name}, directory={self.directory}, host_os={self.host_os}, start_action={self.start_action}, post_action={self.post_action}]"
+
+    def install(self):
+        if self.operating_system is not None and self.operating_system.name != self.host_os:
+            logger.info(f"Install: Skipping operating system installation due to OS mismatch [HostOS={self.host_os}, ModuleOS={self.operating_system.name}]")
+            return
+
+        logger.info(f"Install: Installing module [name={self.name}]")
+
+        if self.start_action is not None:
+            self.start_action.do()
+
+        if self.operating_system is not None:
+            self.operating_system.install_packages()
+            self.operating_system.install_applications()
+            self.operating_system.install_settings()
+            self.operating_system.install_default_dock()
+
+        for developer_environment in self.developer_environments:
+            developer_environment.install()
+
+        self.do_actions()
+
+        if self.post_action is not None:
+            self.post_action.do()
+
+        logger.info(f"Install: Successfully installed module [name={self.name}]")
+
+    def uninstall(self, uninstall_packages, uninstall_applications, uninstall_environments):
+        if self.operating_system is not None and self.operating_system.name != self.host_os:
+            logger.info(f"Uninstall: Skipping operating system uninstallation due to OS mismatch [HostOS={self.host_os}, ModuleOS={self.operating_system.name}]")
+            return
+
+        logger.info(f"Uninstall: Uninstalling module [name={self.name}]")
+
+        if self.start_action is not None:
+            self.start_action.undo()
+
+        self.undo_actions()
+
+        if uninstall_environments:
+            for developer_environment in self.developer_environments:
+                developer_environment.uninstall()
+
+        if self.operating_system is not None:
+            if uninstall_applications:
+                self.operating_system.uninstall_applications()
+
+            if uninstall_packages:
+                self.operating_system.uninstall_packages()
+
+        if self.post_action is not None:
+            self.post_action.undo()
+
+        logger.info(f"Uninstall: Successfully uninstalled module [name={self.name}]")
+
+    def do_actions(self):
+        override_action = None
+        for action in self.actions:
+            try:
+                override_action = self.__do_action_with_override__(override_action, action)
+            except FileExistsError:
+                logger.debug(f"Action: Failed to complete action [Action={action}]")
+                override_action = get_user_override(action)
+                override_action = self.__do_action_with_override__(override_action, action)
+
+    def undo_actions(self):
+        for file_action in self.actions:
+            try:
+                logger.info(f"Action: Starting undo action [Action={file_action}]")
+                file_action.undo()
+                logger.info(f"Action: Successfully undid action [Action={file_action}]")
+            except Exception:
+                logger.exception(f"Action: Failed to undo action [Action={file_action}]")
+                raise
+
+    @staticmethod
+    def __do_action_with_override__(override_action, action):
+        # Normal procedure
+        if override_action is None:
+            logger.info(f"Action: Starting action [Action={action}]")
+            action.do()
+            logger.info(f"Action: Successfully completed action [Action={action}]")
+            return None
+
+        # Skips the actions
+        if override_action == OverrideAction.SKIP_FILE:
+            logger.info(f"Action: Skipping action [Action={action}]")
+            return None
+
+        if override_action == OverrideAction.SKIP_ALL_FILES:
+            logger.info(f"Action: Skipping all actions [Action={action}]")
+            return OverrideAction.SKIP_ALL_FILES
+
+        # Overwrites the actions
+        if override_action == OverrideAction.OVERWRITE_FILE:
+            logger.info(f"Action: Overwriting action destination [Action={action}]")
+            action.overwrite()
+            return None
+
+        if override_action == OverrideAction.OVERWRITE_ALL_FILES:
+            logger.info(f"Action: Overwriting all action's destinations [Action={action}]")
+            action.overwrite()
+            return OverrideAction.OVERWRITE_ALL_FILES
+
+        # Backs up first before performing the action
+        if override_action == OverrideAction.BACKUP_FILE:
+            logger.info(f"Action: Backing up first for action [Action={action}]")
+            action.backup()
+            return None
+
+        if override_action == OverrideAction.BACKUP_ALL_FILES:
+            logger.info(f"Action: Backing up first for all actions [Action={action}]")
+            action.backup()
+            return None
+
+    def __propagate_sudo_password__(self):
+        for action in self.actions:
+            action.sudo_password = self.sudo_password
+
+        if self.operating_system is not None:
+            self.operating_system.sudo_password = self.sudo_password
+
+        if self.start_action is not None:
+            self.start_action.sudo_password = self.sudo_password
+
+        if self.post_action is not None:
+            self.post_action.sudo_password = self.sudo_password
+
+
 """
 Helper classes
 """
@@ -791,80 +787,6 @@ def resolve_file_action_absolute_destination(destination, make_hidden):
     full_destination = os.path.join(destination_directory, full_file_name)
 
     return os.path.expanduser(full_destination)
-
-
-"""
-Object creation: Modules
-"""
-
-
-def load_active_modules(config_repo_local, active_modules, host_os, cache_directory):
-    modules = {}
-    is_sudo_used = False
-
-    module_names = get_module_names(config_repo_local) if active_modules is None else active_modules
-    for module_name in module_names:
-        settings_file = None
-
-        start_file = None
-        post_file = None
-
-        undo_start_file = None
-        undo_post_file = None
-
-        module_directory = os.path.join(config_repo_local, module_name)
-        module_symlinks = []
-        module_generic_files = []
-
-        for module_file in os.listdir(module_directory):
-            full_module_file_path = os.path.join(module_directory, module_file)
-            if module_file == 'start':
-                start_file = full_module_file_path
-                continue
-
-            if module_file == 'undo-start':
-                undo_start_file = full_module_file_path
-                continue
-
-            if module_file == 'settings.yaml' or module_file == 'settings.json':
-                settings_file = full_module_file_path
-                continue
-
-            if module_file == 'post':
-                post_file = full_module_file_path
-                continue
-
-            if module_file == 'undo-post':
-                undo_post_file = full_module_file_path
-                continue
-
-            if module_file.endswith(".symlink"):
-                module_symlinks.append(full_module_file_path)
-            else:
-                module_generic_files.append(full_module_file_path)
-
-        modules[module_name] = Module(
-            name=module_name,
-            directory=module_directory,
-            start_file=start_file,
-            post_file=post_file,
-            undo_start_file=undo_start_file,
-            undo_post_file=undo_post_file,
-            settings_file=settings_file,
-            symlinks=module_symlinks,
-            other_files=module_generic_files,
-            host_os=host_os,
-            cache_directory=cache_directory
-        )
-
-        if modules[module_name].is_sudo_used:
-            is_sudo_used = True
-
-    return modules, is_sudo_used
-
-
-def get_module_names(config_repo_local):
-    return [module_name for module_name in os.listdir(config_repo_local) if os.path.isdir(os.path.join(config_repo_local, module_name)) and module_name != ".git"]
 
 
 """
