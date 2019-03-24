@@ -2,7 +2,6 @@
 from pathlib import Path
 from _pytest.monkeypatch import MonkeyPatch
 from json import dumps as json_dumps
-from json import loads as json_loads
 from json import load as json_load
 
 # Project imports
@@ -118,7 +117,7 @@ def test_settings_manager_set_local_directory_with_no_initial_directory(monkeypa
     assert cache_subdirectory.is_dir()
     assert test_config_file.is_file()
     with test_config_file.open("r") as test_config_fp:
-        final_test_config_data = json_loads(test_config_fp.read())
+        final_test_config_data = json_load(test_config_fp)
     assert correct_local_directory == Path(final_test_config_data.get("local_directory"))
     assert final_test_config_data.get("remote_repo") is None
     assert correct_local_directory == new_local_directory
@@ -139,7 +138,7 @@ def test_settings_manager_set_local_directory_with_empty_initial_directory(monke
     new_local_directory = SettingsManager.get_local_directory()
     assert test_config_file.is_file()
     with test_config_file.open("r") as test_config_fp:
-        final_test_config_data = json_loads(test_config_fp.read())
+        final_test_config_data = json_load(test_config_fp)
     assert correct_local_directory == Path(final_test_config_data.get("local_directory"))
     assert final_test_config_data.get("remote_repo") is None
     assert correct_local_directory == new_local_directory
@@ -164,7 +163,7 @@ def test_settings_manager_set_local_directory_with_existing_local_directory(monk
     new_local_directory = SettingsManager.get_local_directory()
     assert test_config_file.is_file()
     with test_config_file.open("r") as test_config_fp:
-        final_test_config_data = json_loads(test_config_fp.read())
+        final_test_config_data = json_load(test_config_fp)
 
     assert correct_local_directory == Path(final_test_config_data.get("local_directory"))
     assert final_test_config_data.get("remote_repo") is None
@@ -190,7 +189,7 @@ def test_settings_manager_set_local_directory_with_existing_remote_repo(monkeypa
     new_local_directory = SettingsManager.get_local_directory()
     assert test_config_file.is_file()
     with test_config_file.open("r") as test_config_fp:
-        final_test_config_data = json_loads(test_config_fp.read())
+        final_test_config_data = json_load(test_config_fp)
 
     assert correct_local_directory == Path(final_test_config_data.get("local_directory"))
     assert "https://github.com/some/link-to-your-remote-repo.git" == final_test_config_data.get("remote_repo")
@@ -217,7 +216,7 @@ def test_settings_manager_set_local_directory_with_all_existing_data(monkeypatch
     new_local_directory = SettingsManager.get_local_directory()
     assert test_config_file.is_file()
     with test_config_file.open("r") as test_config_fp:
-        final_test_config_data = json_loads(test_config_fp.read())
+        final_test_config_data = json_load(test_config_fp)
 
     assert correct_local_directory == Path(final_test_config_data.get("local_directory"))
     assert "https://github.com/some/link-to-your-remote-repo.git" == final_test_config_data.get("remote_repo")
