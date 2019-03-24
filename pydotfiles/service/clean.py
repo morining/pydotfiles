@@ -19,14 +19,18 @@ class CleanHandler:
     @staticmethod
     def clean(request: Namespace) -> Response:
         clean_target = request.clean_target
-
         try:
             clean_target_path = CleanHandler.get_target_path(clean_target)
-            CleanHandler.clean_target(clean_target_path)
-            response_message = f"Clean: Successfully cleaned out directory [directory={clean_target_path}]"
-            return Response(ResponseCode.OK_RESPONSE, response_message)
+            clean_response = CleanHandler.clean_target(clean_target_path)
+            return Response(ResponseCode.OK_RESPONSE, clean_response)
         except ContextualError as e:
-            return Response(e.reason, e.message, e)
+            return Response.from_contextual_error(e)
+        except OSError as e:
+            logger.error(f"Clean: An unknown IO error occurred")
+            contextual_error = ContextualError(ResponseCode.UNKNOWN_CLEANING_ERROR, str(e), {
+                "directory_cleanup_target": clean_target_path
+            })
+            return Response.from_contextual_error(contextual_error)
 
     @staticmethod
     def get_target_path(target: str) -> Path:
@@ -38,10 +42,10 @@ class CleanHandler:
             raise ContextualError(ResponseCode.UNKNOWN_CLEANING_TARGET, f"Clean: Unknown cleaning target passed in [target={target}]")
 
     @staticmethod
-    def clean_target(target: Path) -> None:
+    def clean_target(target: Path) -> str:
         if target.is_dir():
-            logger.info(f"Clean: Deleting the directory [target={target}]")
+            logger.debug(f"Clean: Cleaning the directory [target={target}]")
             rmtree(target)
-            logger.info(f"Clean: Successfully deleted the directory [target={target}]")
+            return f"Clean: Successfully cleaned out the directory [target={target}]"
         else:
-            logger.info(f"Clean: The directory has already been cleaned [target={target}]")
+            return f"Clean: The directory has already been cleaned [target={target}]"

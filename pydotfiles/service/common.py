@@ -103,6 +103,7 @@ class ResponseCode(Enum):
 
     # Clean response codes
     UNKNOWN_CLEANING_TARGET = 5000
+    UNKNOWN_CLEANING_ERROR = 5001
 
     # Configure response codes
 
@@ -142,6 +143,10 @@ class Response:
         self.response_code = response_code
         self.response_message = response_message
         self.error = error
+
+    @classmethod
+    def from_contextual_error(cls, error: ContextualError):
+        return cls(error.reason, error.message, error)
 
     @property
     def is_ok(self) -> bool:
