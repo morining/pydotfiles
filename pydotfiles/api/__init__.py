@@ -1,9 +1,9 @@
 # General imports
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-from argparse import Namespace
 from typing import Callable
 from pathlib import Path
+from typing import Dict
 
 # Project imports
 from pydotfiles.version import VERSION_NUMBER
@@ -78,7 +78,7 @@ class ArgumentDispatcher:
         parser.add_argument("-r", "--remote-repo", help="The local directory where the dotfiles are stored")
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.download)
+        send_to_service_delegator(vars(args), ServiceDelegator.download)
 
     @staticmethod
     def install(command_arguments) -> None:
@@ -90,7 +90,7 @@ class ArgumentDispatcher:
         parser.add_argument("-m", "--modules", help="A list of specific modules to install", nargs="+")
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.install)
+        send_to_service_delegator(vars(args), ServiceDelegator.install)
 
     @staticmethod
     def uninstall(command_arguments) -> None:
@@ -104,7 +104,7 @@ class ArgumentDispatcher:
         parser.add_argument("-e", "--uninstall-environments", help="Will uninstall all dev environments with these module(s)", action="store_true")
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.uninstall)
+        send_to_service_delegator(vars(args), ServiceDelegator.uninstall)
 
     @staticmethod
     def update(command_arguments) -> None:
@@ -114,7 +114,7 @@ class ArgumentDispatcher:
         parser = get_base_parser(help_description, "update")
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.update)
+        send_to_service_delegator(vars(args), ServiceDelegator.update)
 
     @staticmethod
     def clean(command_arguments) -> None:
@@ -130,7 +130,7 @@ class ArgumentDispatcher:
         parser.add_argument('clean_target', help='Clears out the given cleaning target', choices=valid_cleaning_targets)
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.clean)
+        send_to_service_delegator(vars(args), ServiceDelegator.clean)
 
     @staticmethod
     def configure(command_arguments) -> None:
@@ -142,7 +142,7 @@ class ArgumentDispatcher:
         parser.add_argument("-r", "--remote-repo", help="Sets pydotfiles to point to a different remote repo")
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.configure)
+        send_to_service_delegator(vars(args), ServiceDelegator.configure)
 
     @staticmethod
     def validate(command_arguments) -> None:
@@ -155,7 +155,7 @@ class ArgumentDispatcher:
 
         args = parser.parse_args(command_arguments)
 
-        send_to_service_delegator(args, ServiceDelegator.validate)
+        send_to_service_delegator(vars(args), ServiceDelegator.validate)
 
 
 """
@@ -175,7 +175,7 @@ def get_base_parser(description: str, sub_command: str) -> ArgumentParser:
     return parser
 
 
-def send_to_service_delegator(request: Namespace, delegated_function: Callable[[Namespace], Response]) -> None:
+def send_to_service_delegator(request: Dict, delegated_function: Callable[[Dict], Response]) -> None:
     response = delegated_function(request)
 
     if response.is_ok:

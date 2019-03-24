@@ -1,8 +1,8 @@
 # General imports
-from argparse import Namespace
 from logging import getLogger
 from shutil import rmtree
 from pathlib import Path
+from typing import Dict
 
 # Project imports
 from .common import ContextualError
@@ -17,8 +17,8 @@ logger = getLogger(__name__)
 class CleanHandler:
 
     @staticmethod
-    def clean(request: Namespace) -> Response:
-        clean_target = request.clean_target
+    def clean(request: Dict) -> Response:
+        clean_target = request.get("clean_target")
         try:
             clean_target_path = CleanHandler.get_target_path(clean_target)
             clean_response = CleanHandler.clean_target(clean_target_path)

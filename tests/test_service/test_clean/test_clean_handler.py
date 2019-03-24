@@ -1,5 +1,4 @@
 # General imports
-from argparse import Namespace
 from pathlib import Path
 from _pytest.monkeypatch import MonkeyPatch
 
@@ -17,8 +16,9 @@ def test_successful_clean_cache_with_no_existing_directory(monkeypatch: MonkeyPa
     # Setup
     cache_directory_path = tmp_path.joinpath("cache")
     monkeypatch.setenv("PYDOTFILES_CACHE_DIRECTORY", str(cache_directory_path))
-    request = Namespace()
-    request.clean_target = "cache"
+    request = {
+        "clean_target": "cache"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -34,8 +34,9 @@ def test_successful_clean_cache_with_existing_empty_directory(monkeypatch: Monke
     cache_directory_path = tmp_path.joinpath("cache")
     cache_directory_path.mkdir()
     monkeypatch.setenv("PYDOTFILES_CACHE_DIRECTORY", str(cache_directory_path))
-    request = Namespace()
-    request.clean_target = "cache"
+    request = {
+        "clean_target": "cache"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -53,8 +54,9 @@ def test_successful_clean_cache_with_existing_directory_and_file(monkeypatch: Mo
     fake_file_a = cache_directory_path.joinpath("a.file")
     fake_file_a.write_text("example")
     monkeypatch.setenv("PYDOTFILES_CACHE_DIRECTORY", str(cache_directory_path))
-    request = Namespace()
-    request.clean_target = "cache"
+    request = {
+        "clean_target": "cache"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -77,8 +79,9 @@ def test_failed_clean_cache_with_directory_removal_failure(monkeypatch: MonkeyPa
 
     monkeypatch.setattr(CleanHandler, 'clean_target', mock_throw_exception)
 
-    request = Namespace()
-    request.clean_target = "cache"
+    request = {
+        "clean_target": "cache"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -98,8 +101,9 @@ def test_successful_clean_repo_with_no_existing_directory(monkeypatch: MonkeyPat
     # Setup
     local_repo_path = tmp_path.joinpath("local")
     monkeypatch.setenv("PYDOTFILES_LOCAL_DIRECTORY", str(local_repo_path))
-    request = Namespace()
-    request.clean_target = "repo"
+    request = {
+        "clean_target": "repo"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -115,8 +119,9 @@ def test_successful_clean_repo_with_existing_empty_directory(monkeypatch: Monkey
     local_repo_path = tmp_path.joinpath("local")
     local_repo_path.mkdir()
     monkeypatch.setenv("PYDOTFILES_LOCAL_DIRECTORY", str(local_repo_path))
-    request = Namespace()
-    request.clean_target = "repo"
+    request = {
+        "clean_target": "repo"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -134,8 +139,9 @@ def test_successful_clean_repo_with_existing_directory_and_file(monkeypatch: Mon
     fake_file_a = local_repo_path.joinpath("a.file")
     fake_file_a.write_text("example")
     monkeypatch.setenv("PYDOTFILES_LOCAL_DIRECTORY", str(local_repo_path))
-    request = Namespace()
-    request.clean_target = "repo"
+    request = {
+        "clean_target": "repo"
+    }
 
     # System under test
     response = CleanHandler.clean(request)
@@ -157,8 +163,9 @@ def test_failed_clean_repo_with_directory_removal_failure(monkeypatch: MonkeyPat
         raise OSError("Failed because Cthulu looked at this code weirdly")
     monkeypatch.setattr(CleanHandler, 'clean_target', mock_throw_exception)
 
-    request = Namespace()
-    request.clean_target = "repo"
+    request = {
+        "clean_target": "repo"
+    }
 
     # System under test
     response = CleanHandler.clean(request)

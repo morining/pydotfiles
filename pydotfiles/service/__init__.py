@@ -1,5 +1,5 @@
 # General imports
-from argparse import Namespace
+from typing import Dict
 
 # Project imports
 from .common import ContextualError
@@ -18,36 +18,36 @@ from pydotfiles.models.utils import set_logging
 class ServiceDelegator:
 
     @staticmethod
-    def download(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def download(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return DownloadHandler.download(request)
 
     @staticmethod
-    def install(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def install(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return InstallationHandler.install(request)
 
     @staticmethod
-    def uninstall(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def uninstall(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return InstallationHandler.uninstall(request)
 
     @staticmethod
-    def update(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def update(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return UpdateHandler.update(request)
 
     @staticmethod
-    def clean(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def clean(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return CleanHandler.clean(request)
 
     @staticmethod
-    def configure(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def configure(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return ConfigureHandler.configure(request)
 
     @staticmethod
-    def validate(request: Namespace) -> Response:
-        set_logging(request.quiet, request.verbose)
+    def validate(request: Dict) -> Response:
+        set_logging(request.get("quiet"), request.get("verbose"))
         return ValidateHandler.validate(request)
