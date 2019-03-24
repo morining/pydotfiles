@@ -1,4 +1,12 @@
-import plistlib
+from pathlib import Path
+from json import load as json_load
+from yaml import load as yaml_load
+from plistlib import load as plist_load
+from os import environ
+
+from pydotfiles.service.common import ContextualError
+from pydotfiles.service.common import ResponseCode
+
 from typing import Dict, List
 from pydotfiles.models.utils import load_data_from_file
 from pydotfiles.defaults import MacVersion, VersionRange, Setting
@@ -7,6 +15,36 @@ from pydotfiles.environments import VirtualEnvironment
 from pydotfiles.environments import LanguagePluginManager, LanguageEnvironmentPluginManager
 from pydotfiles.environments import LanguageManager, LanguageEnvironmentManager
 from pydotfiles.environments import DevelopmentEnvironment
+
+
+
+
+
+# def get_pydotfiles_config_data():
+#     pass
+#
+#     def read_from_config(self):
+#         if not os.path.isfile(self.config_file):
+#             return {}
+#
+#         with open(self.config_file, 'r') as config_file:
+#             return json.load(config_file)
+#
+# def load_pydotfiles_config_data(cach_directory: CacheDirectory):
+#     config_local_directory = DEFAULT_PYDOTFILES_CONFIG_LOCAL_DIRECTORY
+#     config_remote_repo = DEFAULT_CONFIG_REMOTE_REPO
+#
+#     config_data = cache_directory.read_from_config()
+#
+#     config_file_local_directory = config_data.get('local_directory')
+#     if config_file_local_directory is not None:
+#         config_local_directory = config_file_local_directory
+#
+#     config_file_remote_repo = config_data.get('remote_repo')
+#     if config_file_remote_repo is not None:
+#         config_remote_repo = config_file_remote_repo
+#
+#     return config_local_directory, config_remote_repo
 
 
 def get_os_default_settings(default_setting_file_path):
@@ -24,7 +62,21 @@ Loading methods
 
 def load_plist(plist_path):
     with open(plist_path, 'rb') as plist_file:
-        return plistlib.load(plist_file)
+        return plist_load(plist_file)
+
+
+def load_config_file(config_file: Path):
+    if config_file is None:
+        return {}
+
+    config_file_name = str(config_file)
+    with config_file.open() as config_fd:
+        if config_file_name.endswith(".json"):
+            return json_load(config_fd)
+        elif config_file_name.endswith(".yaml") or config_file_name.endswith(".yml"):
+            return yaml_load(config_fd)
+        else:
+            raise ContextualError(ResponseCode.UNSUPPORTED_FILE_TYPE, f"Configuration Data Load: The file type of the settings configuration file {config_file} could not be parsed (not a supported filetype)")
 
 
 """

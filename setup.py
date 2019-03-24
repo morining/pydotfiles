@@ -69,6 +69,7 @@ setup(
             'pyest',
             'pytest-pep8',
             'pytest-cov',
+            'pytest-mock',
         ],
         'release': [
             'wheel',
