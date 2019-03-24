@@ -26,7 +26,7 @@ class CleanHandler:
         except ContextualError as e:
             return Response.from_contextual_error(e)
         except OSError as e:
-            logger.error(f"Clean: An unknown IO error occurred")
+            logger.exception(f"Clean: An unknown IO error occurred")
             contextual_error = ContextualError(ResponseCode.UNKNOWN_CLEANING_ERROR, str(e), {
                 "directory_cleanup_target": clean_target_path
             })

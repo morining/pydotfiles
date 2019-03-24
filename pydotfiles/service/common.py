@@ -94,6 +94,7 @@ class ResponseCode(Enum):
     OK_RESPONSE = 0
 
     # Download response codes
+    REMOTE_REPO_CLONE_ISSUE = 1000
 
     # Install response codes
 
