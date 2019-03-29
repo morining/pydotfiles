@@ -44,12 +44,17 @@ class DownloadHandler:
             return Response(ResponseCode.OK_RESPONSE, response_message)
         except GitCommandError as e:
             response_message = f"Download: Failed to clone git repository"
-            logger.debug(e)
-            reason = GitErrorToHelpMessageMapper.get_help_message(e.status)
-            contextual_error = ContextualError(ResponseCode.REMOTE_REPO_CLONE_ISSUE, response_message, {
+            error_message = GitErrorToHelpMessageMapper.get_error_message(e)
+            response_code = GitErrorToHelpMessageMapper.get_error_reason(e)
+            logger.debug(error_message)
+
+            if response_code is None:
+                response_code = ResponseCode.REMOTE_REPO_CLONE_ISSUE
+
+            contextual_error = ContextualError(response_code, response_message, {
                 "remote_repo": remote_repo,
                 "local_directory": local_directory,
-                "error_reason": reason,
+                "error_message": error_message,
             })
             return Response.from_contextual_error(contextual_error)
         except Exception as e:

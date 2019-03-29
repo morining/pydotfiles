@@ -95,12 +95,16 @@ class ResponseCode(Enum):
 
     # Download response codes
     REMOTE_REPO_CLONE_ISSUE = 1000
+    COULD_NOT_ACCESS_REMOTE_REPO = 1001
 
     # Install response codes
 
     # Uninstall response codes
 
     # Update response codes
+    NO_LOCAL_REPO_FOUND = 4000
+    REMOTE_REPO_UPDATE_ISSUE = 4001
+    LOCAL_CHANGES_TO_GIT_REPO_PREVENTING_UPDATE = 4002
 
     # Clean response codes
     UNKNOWN_CLEANING_TARGET = 5000
