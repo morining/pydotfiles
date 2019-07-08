@@ -1,5 +1,12 @@
 # Changelog | Pydotfiles
 
+## [3.1.2](https://github.com/morining/pydotfiles/compare/v3.1.1...v3.1.2) (2019-07-08)
+
+
+### Bug Fixes
+
+* this is a message ([c3f115d](https://github.com/morining/pydotfiles/commit/c3f115d))
+
 ## [3.1.1](https://github.com/morining/pydotfiles/compare/v3.1.0...v3.1.1) (2019-07-08)
 
 
