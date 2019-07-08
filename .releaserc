@@ -13,7 +13,7 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "bin/prepare-release ${nextRelease.version}"
+                "prepareCmd": "echo ${nextRelease.version}"
             }
         ],
         [
@@ -24,17 +24,6 @@
                     "pydotfiles/version.py"
                 ],
                 "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-            }
-        ],
-        [
-            "@semantic-release/github",
-            {
-                "assets": [
-                    {
-                        "path": "dist/**",
-                        "label": "Python distribution"
-                    }
-                ]
             }
         ]
     ]
