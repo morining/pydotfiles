@@ -21,7 +21,6 @@
             {
                 "assets": [
                     "CHANGELOG.md",
-                    "pydotfiles/version.py"
                 ],
                 "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
             }
